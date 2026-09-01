@@ -1,0 +1,119 @@
+/**
+ * سیستم طراحی سامانهٔ صندوق روزانه.
+ *
+ * فونت: وزیرمتن (Vazirmatn) — به‌صورت محلی از پکیج نصب می‌شود تا سامانه
+ * در شبکهٔ داخلی فروشگاه بدون اینترنت هم درست نمایش داده شود.
+ *
+ * رنگ پایه: سرمه‌ای/آبی نفتی. رنگ‌های وضعیت (سبز/آبی/قرمز) عمداً از
+ * طیف رنگ اصلی فاصله دارند تا وضعیت تراز/مازاد/کسری در یک نگاه و بدون
+ * اتکا به رنگ‌شناسی دقیق قابل تشخیص باشد.
+ */
+
+@import '@fontsource-variable/vazirmatn/index.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* ─── سطوح ─── */
+    --color-bg: 248 250 252;
+    --color-surface: 255 255 255;
+    --color-surface-muted: 241 245 249;
+    --color-border: 226 232 240;
+
+    /* ─── متن ─── */
+    --color-text: 15 23 42;
+    --color-text-muted: 100 116 139;
+    --color-text-inverse: 248 250 252;
+
+    /* ─── رنگ اصلی: سرمه‌ای ─── */
+    --color-primary: 30 58 95;
+    --color-primary-hover: 23 45 76;
+    --color-primary-soft: 224 235 247;
+
+    /* ─── وضعیت صندوق ─── */
+    /* تراز — سبز */
+    --color-balanced: 21 128 61;
+    --color-balanced-soft: 220 252 231;
+    /* مازاد — آبی */
+    --color-surplus: 29 78 216;
+    --color-surplus-soft: 219 234 254;
+    /* کسری — قرمز */
+    --color-shortage: 185 28 28;
+    --color-shortage-soft: 254 226 226;
+    /* هشدار — کهربایی */
+    --color-warning: 180 83 9;
+    --color-warning-soft: 254 243 199;
+
+    --radius: 0.625rem;
+  }
+
+  .dark {
+    --color-bg: 8 15 26;
+    --color-surface: 17 27 43;
+    --color-surface-muted: 25 38 58;
+    --color-border: 40 56 82;
+
+    --color-text: 226 232 240;
+    --color-text-muted: 148 163 184;
+    --color-text-inverse: 15 23 42;
+
+    --color-primary: 96 152 220;
+    --color-primary-hover: 129 175 232;
+    --color-primary-soft: 25 45 72;
+
+    --color-balanced: 74 222 128;
+    --color-balanced-soft: 20 60 40;
+    --color-surplus: 96 165 250;
+    --color-surplus-soft: 23 45 85;
+    --color-shortage: 248 113 113;
+    --color-shortage-soft: 76 26 26;
+    --color-warning: 251 191 36;
+    --color-warning-soft: 69 46 10;
+  }
+
+  html {
+    /* کل برنامه راست‌چین است؛ جهت روی ریشه اعمال می‌شود تا منطق چیدمان
+       Tailwind (ms-/me-/ps-/pe-) خودکار برعکس شود. */
+    direction: rtl;
+  }
+
+  body {
+    @apply bg-bg text-text antialiased;
+    font-family:
+      'Vazirmatn Variable',
+      'Vazirmatn',
+      system-ui,
+      -apple-system,
+      'Segoe UI',
+      sans-serif;
+    /* ارقام فارسی در متن، ولی اعداد مالی با کلاس .tabular-nums لاتین می‌مانند. */
+    font-feature-settings: 'ss01';
+  }
+
+  /* اعداد مالی: عرض ثابت تا ستون‌های جدول در هم نریزند. */
+  .financial-figure {
+    font-feature-settings: 'tnum';
+    font-variant-numeric: tabular-nums;
+    direction: ltr;
+    unicode-bidi: embed;
+    display: inline-block;
+  }
+
+  /* حذف فلش‌های input[type=number] — ورودی مبلغ با فرمت‌کنندهٔ خودمان کار می‌کند. */
+  input[type='number']::-webkit-outer-spin-button,
+  input[type='number']::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  input[type='number'] {
+    -moz-appearance: textfield;
+  }
+
+  /* حلقهٔ فوکوس یکدست و واضح برای دسترس‌پذیری کیبورد. */
+  :focus-visible {
+    @apply outline-none ring-2 ring-primary ring-offset-2 ring-offset-bg;
+  }
+}

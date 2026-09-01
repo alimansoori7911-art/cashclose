@@ -1,0 +1,383 @@
+// مدل دادهٔ سامانهٔ صندوق روزانه (SaaS چندمستأجری).
+//
+// اصول طراحی:
+//  ۱. هر جدولِ دادهٔ کسب‌وکار یک `tenantId` مستقیم دارد (دنورمالایز‌شده)
+//     تا فیلتر جداسازی مستأجر بدون JOIN زنجیره‌ای و در یک لایهٔ مرکزی
+//     اعمال شود.
+//  ۲. مبالغ `BigInt` و به ریالِ صحیح‌اند — هرگز اعشاری/شناور.
+//  ۳. تاریخِ کاریِ صندوق `businessDate` از نوع `Date` است و جدا از
+//     `createdAt`؛ صندوقِ دیروز ممکن است امروز ثبت شود.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────── مستأجر و ساختار فروشگاه ───────────────────────────
+
+enum TenantStatus {
+  active
+  suspended
+}
+
+/// کسب‌وکار مشترکِ سامانه. ریشهٔ جداسازی داده‌ها.
+model Tenant {
+  id        String       @id @default(uuid()) @db.Uuid
+  name      String       @db.VarChar(200)
+  status    TenantStatus @default(active)
+  createdAt DateTime     @default(now()) @map("created_at")
+  updatedAt DateTime     @updatedAt @map("updated_at")
+
+  stores        Store[]
+  branches      Branch[]
+  users         User[]
+  posTerminals  PosTerminal[]
+  cashRegisters CashRegister[]
+  notifications Notification[]
+  auditLogs     AuditLog[]
+
+  @@map("tenants")
+}
+
+model Store {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  name      String   @db.VarChar(200)
+  address   String?
+  phone     String?  @db.VarChar(20)
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  branches Branch[]
+
+  @@index([tenantId])
+  @@map("stores")
+}
+
+model Branch {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  storeId   String   @map("store_id") @db.Uuid
+  name      String   @db.VarChar(200)
+  address   String?
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  tenant        Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  store         Store          @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  users         User[]
+  posTerminals  PosTerminal[]
+  cashRegisters CashRegister[]
+
+  @@index([tenantId])
+  @@index([storeId])
+  @@map("branches")
+}
+
+// ─────────────────────────── کاربران و دسترسی ───────────────────────────
+
+/// نقش‌ها. افزودن `super_admin` در فاز بعد فقط یک مقدار جدید است و
+/// Migration مخربی لازم ندارد.
+enum UserRole {
+  cashier
+  accountant
+  store_manager
+  financial_manager
+  owner
+}
+
+enum UserStatus {
+  active
+  inactive
+}
+
+model User {
+  id           String     @id @default(uuid()) @db.Uuid
+  tenantId     String     @map("tenant_id") @db.Uuid
+  branchId     String?    @map("branch_id") @db.Uuid
+  fullName     String     @map("full_name") @db.VarChar(120)
+  username     String     @db.VarChar(80)
+  email        String?    @db.VarChar(160)
+  passwordHash String     @map("password_hash")
+  role         UserRole
+  status       UserStatus @default(active)
+  lastLoginAt  DateTime?  @map("last_login_at")
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+
+  tenant             Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  branch             Branch?               @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  cashRegisters      CashRegister[]        @relation("CashierRegisters")
+  reviewedRegisters  CashRegisterHistory[]
+  submittedVersions  CashRegisterVersion[]
+  assignedTerminals  PosTerminal[]         @relation("TerminalAssignee")
+  notifications      Notification[]
+  auditLogs          AuditLog[]
+  passwordResets     PasswordResetToken[]
+
+  // نام کاربری فقط درون هر مستأجر یکتاست، نه در کل سامانه.
+  @@unique([tenantId, username])
+  @@index([tenantId, role])
+  @@index([branchId])
+  @@map("users")
+}
+
+model PasswordResetToken {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  /// فقط هشِ توکن ذخیره می‌شود؛ مقدار خام تنها یک‌بار به کاربر می‌رسد.
+  tokenHash String    @unique @map("token_hash")
+  expiresAt DateTime  @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("password_reset_tokens")
+}
+
+// ─────────────────────────── کارتخوان ───────────────────────────
+
+model PosTerminal {
+  id           String   @id @default(uuid()) @db.Uuid
+  tenantId     String   @map("tenant_id") @db.Uuid
+  branchId     String   @map("branch_id") @db.Uuid
+  /// صندوقدارِ مسئولِ این دستگاه؛ خالی یعنی در دسترسِ کل شعبه.
+  assignedToId String?  @map("assigned_to_id") @db.Uuid
+  name         String   @db.VarChar(100)
+  bank         String?  @db.VarChar(100)
+  /// شمارهٔ کارت/حساب مقصد برای دستگاه‌های کارت‌به‌کارت.
+  cardNumber   String?  @map("card_number") @db.VarChar(20)
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  tenant     Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  branch     Branch        @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  assignedTo User?         @relation("TerminalAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
+  entries    Transaction[]
+
+  @@index([tenantId])
+  @@index([branchId, isActive])
+  @@map("pos_terminals")
+}
+
+// ─────────────────────────── صندوق روزانه ───────────────────────────
+
+enum CashRegisterStatus {
+  draft
+  submitted
+  approved
+  rejected
+}
+
+model CashRegister {
+  id           String             @id @default(uuid()) @db.Uuid
+  tenantId     String             @map("tenant_id") @db.Uuid
+  branchId     String             @map("branch_id") @db.Uuid
+  cashierId    String             @map("cashier_id") @db.Uuid
+  /// روزِ کاریِ صندوق (جدا از زمان ثبت).
+  businessDate DateTime           @map("business_date") @db.Date
+  status       CashRegisterStatus @default(draft)
+
+  /// نتیجهٔ موتور محاسبه در لحظهٔ آخرین ذخیره — همیشه سمت سرور محاسبه
+  /// می‌شود و هرگز از کلاینت پذیرفته نمی‌شود.
+  registerBalance BigInt @default(0) @map("register_balance")
+  documentsTotal  BigInt @default(0) @map("documents_total")
+  difference      BigInt @default(0)
+
+  /// صندوقِ «دو روزه» طبق فلوی خاص سند؛ روز دومِ پوشش‌داده‌شده.
+  coversUntilDate DateTime? @map("covers_until_date") @db.Date
+
+  finalNotes  String?   @map("final_notes")
+  submittedAt DateTime? @map("submitted_at")
+  approvedAt  DateTime? @map("approved_at")
+  rejectedAt  DateTime? @map("rejected_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  tenant       Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  branch       Branch                @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  cashier      User                  @relation("CashierRegisters", fields: [cashierId], references: [id], onDelete: Restrict)
+  transactions Transaction[]
+  uploads      Upload[]
+  history      CashRegisterHistory[]
+  versions     CashRegisterVersion[]
+  notifications Notification[]
+
+  // هر صندوقدار در هر شعبه برای هر روز فقط یک صندوق دارد. (شعبه در یک
+  // روز می‌تواند چند صندوق داشته باشد — شیفت صبح/عصر.)
+  @@unique([branchId, businessDate, cashierId])
+  @@index([tenantId, status])
+  @@index([tenantId, businessDate])
+  @@index([branchId, businessDate])
+  @@index([cashierId, status])
+  @@map("cash_registers")
+}
+
+/// انواع تراکنش — آینهٔ `TransactionType` در بستهٔ shared.
+enum TransactionType {
+  sales_total
+  customer_refund
+  debt_receipt
+  deposit_receipt
+  expense_receipt
+  cash_surplus
+  credit_note_issued
+  credit_doc_issued
+  barter
+  credit_note_received
+  expense_payment
+  goods_return
+  cash_shortage
+  unsettled_purchase
+  prior_deposit
+  vip_discount
+  cheque
+  pos
+  card_to_card
+  cash
+  foreign_currency
+  online_gateway
+}
+
+/// یک قلم از صندوق. مدل unified: همهٔ انواع در یک جدول تا گزارش‌گیری ساده بماند.
+model Transaction {
+  id             String          @id @default(uuid()) @db.Uuid
+  tenantId       String          @map("tenant_id") @db.Uuid
+  cashRegisterId String          @map("cash_register_id") @db.Uuid
+  type           TransactionType
+  /// مبلغ به ریال؛ همیشه نامنفی. علامت از روی نوع تعیین می‌شود نه از روی عدد.
+  amount         BigInt          @default(0)
+  description    String?         @db.VarChar(300)
+  /// برای نوع `pos` و `card_to_card`.
+  terminalId     String?         @map("terminal_id") @db.Uuid
+  /// دادهٔ ساختاریِ اضافه (شمارهٔ چک، نوع ارز، …). پیش از ذخیره sanitize می‌شود.
+  meta           Json?
+  /// ترتیب نمایش ردیف‌ها در فرم.
+  sortOrder      Int             @default(0) @map("sort_order")
+  createdAt      DateTime        @default(now()) @map("created_at")
+  updatedAt      DateTime        @updatedAt @map("updated_at")
+
+  cashRegister CashRegister @relation(fields: [cashRegisterId], references: [id], onDelete: Cascade)
+  terminal     PosTerminal? @relation(fields: [terminalId], references: [id], onDelete: SetNull)
+  uploads      Upload[]
+
+  @@index([cashRegisterId, type])
+  @@index([tenantId, type])
+  @@index([amount])
+  @@map("transactions")
+}
+
+model Upload {
+  id             String   @id @default(uuid()) @db.Uuid
+  tenantId       String   @map("tenant_id") @db.Uuid
+  cashRegisterId String   @map("cash_register_id") @db.Uuid
+  transactionId  String?  @map("transaction_id") @db.Uuid
+  /// کلید فایل نزد آداپتور Storage (نه URL مطلق) تا مهاجرت به S3 ممکن بماند.
+  storageKey     String   @map("storage_key")
+  originalName   String   @map("original_name")
+  mimeType       String   @map("mime_type") @db.VarChar(100)
+  sizeBytes      Int      @map("size_bytes")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  cashRegister CashRegister @relation(fields: [cashRegisterId], references: [id], onDelete: Cascade)
+  transaction  Transaction? @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+
+  @@index([cashRegisterId])
+  @@index([transactionId])
+  @@map("uploads")
+}
+
+/// تاریخچهٔ تغییر وضعیت + نظر حسابدار.
+model CashRegisterHistory {
+  id             String             @id @default(uuid()) @db.Uuid
+  tenantId       String             @map("tenant_id") @db.Uuid
+  cashRegisterId String             @map("cash_register_id") @db.Uuid
+  status         CashRegisterStatus
+  comment        String?
+  createdById    String?            @map("created_by_id") @db.Uuid
+  createdAt      DateTime           @default(now()) @map("created_at")
+
+  cashRegister CashRegister @relation(fields: [cashRegisterId], references: [id], onDelete: Cascade)
+  createdBy    User?        @relation(fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([cashRegisterId, createdAt])
+  @@map("cash_register_history")
+}
+
+/// عکسِ کاملِ دادهٔ صندوق در هر بار ارسال — تا حسابدار بتواند نسخهٔ
+/// ردشده و نسخهٔ اصلاح‌شده را واقعاً diff کند.
+model CashRegisterVersion {
+  id             String   @id @default(uuid()) @db.Uuid
+  tenantId       String   @map("tenant_id") @db.Uuid
+  cashRegisterId String   @map("cash_register_id") @db.Uuid
+  versionNumber  Int      @map("version_number")
+  /// کل ساختار تراکنش‌ها و جمع‌ها در لحظهٔ submit.
+  payload        Json
+  submittedAt    DateTime @default(now()) @map("submitted_at")
+  createdById    String?  @map("created_by_id") @db.Uuid
+
+  cashRegister CashRegister @relation(fields: [cashRegisterId], references: [id], onDelete: Cascade)
+  createdBy    User?        @relation(fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@unique([cashRegisterId, versionNumber])
+  @@index([cashRegisterId])
+  @@map("cash_register_versions")
+}
+
+// ─────────────────────────── اعلان و لاگ ───────────────────────────
+
+enum NotificationType {
+  cash_register_rejected
+  cash_register_approved
+  cash_register_reminder
+}
+
+model Notification {
+  id             String           @id @default(uuid()) @db.Uuid
+  tenantId       String           @map("tenant_id") @db.Uuid
+  userId         String           @map("user_id") @db.Uuid
+  type           NotificationType
+  message        String
+  cashRegisterId String?          @map("cash_register_id") @db.Uuid
+  isRead         Boolean          @default(false) @map("is_read")
+  createdAt      DateTime         @default(now()) @map("created_at")
+
+  tenant       Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cashRegister CashRegister? @relation(fields: [cashRegisterId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead, createdAt])
+  @@map("notifications")
+}
+
+/// ردِ ممیزی عملیات حساس (بند ۱۵.۱ سند).
+model AuditLog {
+  id         String   @id @default(uuid()) @db.Uuid
+  tenantId   String?  @map("tenant_id") @db.Uuid
+  userId     String?  @map("user_id") @db.Uuid
+  action     String   @db.VarChar(80)
+  entityType String?  @map("entity_type") @db.VarChar(60)
+  entityId   String?  @map("entity_id") @db.Uuid
+  meta       Json?
+  ipAddress  String?  @map("ip_address") @db.VarChar(64)
+  userAgent  String?  @map("user_agent")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  tenant Tenant? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, createdAt])
+  @@index([userId, createdAt])
+  @@index([entityType, entityId])
+  @@map("audit_logs")
+}

@@ -1,0 +1,35 @@
+# وابستگی‌ها
+node_modules/
+.npm/
+
+# خروجی بیلد
+dist/
+build/
+*.tsbuildinfo
+
+# متغیرهای محیطی — هرگز کامیت نشوند
+.env
+.env.*
+!.env.example
+
+# فایل‌های آپلودشدهٔ کاربران
+uploads/
+apps/api/uploads/
+
+# لاگ
+*.log
+npm-debug.log*
+logs/
+
+# ابزار توسعه
+.vscode/*
+!.vscode/extensions.json
+.idea/
+coverage/
+.vitest/
+.eslintcache
+
+# سیستم‌عامل
+.DS_Store
+Thumbs.db
+desktop.ini

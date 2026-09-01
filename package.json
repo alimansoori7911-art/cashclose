@@ -1,0 +1,39 @@
+{
+  "name": "cashclose",
+  "version": "0.1.0",
+  "private": true,
+  "description": "سامانه مدیریت صندوق روزانه فروشگاه (Cash Register SaaS)",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "concurrently -n api,web -c cyan,magenta \"npm:dev:api\" \"npm:dev:web\"",
+    "dev:api": "npm run start:dev --workspace @cashclose/api",
+    "dev:web": "npm run dev --workspace @cashclose/web",
+    "build": "npm run build --workspace @cashclose/shared && npm run build --workspace @cashclose/api && npm run build --workspace @cashclose/web",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "db:migrate": "npm run db:migrate --workspace @cashclose/api",
+    "db:seed": "npm run db:seed --workspace @cashclose/api",
+    "db:studio": "npm run db:studio --workspace @cashclose/api"
+  },
+  "overridesNote": "deepmerge-ts@<8 مشکل stack exhaustion دارد (GHSA-ggr8-5vv4-36mx) و از طریق Prisma CLI وارد می‌شود. تا انتشار پایدار Prisma 8 مستقیم ارتقا می‌دهیم؛ این وابستگی فقط ابزار توسعه است و وارد runtime نمی‌شود.",
+  "overrides": {
+    "deepmerge-ts": "^8.0.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.15.0",
+    "concurrently": "^9.1.0",
+    "eslint": "^9.15.0",
+    "eslint-config-prettier": "^9.1.0",
+    "prettier": "^3.4.1",
+    "typescript": "^5.7.2",
+    "typescript-eslint": "^8.16.0"
+  },
+  "engines": {
+    "node": ">=20.11.0"
+  }
+}
