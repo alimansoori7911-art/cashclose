@@ -30,19 +30,20 @@ function subscribe(listener: Listener) {
 }
 
 /**
- * مقدار برگشتی باید بین فراخوانی‌ها پایدار باشد، وگرنه React در حلقهٔ
- * بی‌نهایت رندر می‌افتد. پس رشتهٔ خام را مبنا می‌گیریم و کش می‌کنیم.
+ * `useSyncExternalStore` انتظار دارد snapshot بین فراخوانی‌ها با
+ * `Object.is` برابر بماند. پس مقایسه روی **رشتهٔ خام** انجام می‌شود و
+ * `JSON.parse` فقط وقتی اجرا می‌شود که مقدار واقعاً عوض شده باشد —
+ * وگرنه هر رندر یک شیء جدید می‌ساخت و React در حلقه می‌افتاد.
  */
 let cachedRaw: string | null = null;
 let cachedUser: SessionUser | null = null;
 
 function getSnapshot(): SessionUser | null {
-  const user = session.getUser();
-  const raw = user ? JSON.stringify(user) : null;
+  const raw = session.getUserRaw();
 
   if (raw !== cachedRaw) {
     cachedRaw = raw;
-    cachedUser = user;
+    cachedUser = session.getUser();
   }
 
   return cachedUser;

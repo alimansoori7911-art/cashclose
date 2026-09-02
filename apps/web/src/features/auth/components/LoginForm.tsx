@@ -24,6 +24,14 @@ export function LoginForm({ onSuccess }: { onSuccess?: () => void }) {
     event.preventDefault();
     if (loading) return;
 
+    // اعتبارسنجی هنگام ارسال انجام می‌شود، نه با غیرفعال‌کردن دکمه:
+    // دکمهٔ غیرفعال باعث می‌شد کلید Enter بی‌اثر بماند، در حالی که سند
+    // صریحاً «Enter باعث لاگین می‌شود» را خواسته است.
+    if (!username.trim() || !password) {
+      setError('نام کاربری و رمز عبور را وارد کنید.');
+      return;
+    }
+
     setError(null);
     setLoading(true);
 
@@ -67,12 +75,7 @@ export function LoginForm({ onSuccess }: { onSuccess?: () => void }) {
         disabled={loading}
       />
 
-      <Button
-        type="submit"
-        loading={loading}
-        fullWidth
-        disabled={!username.trim() || !password}
-      >
+      <Button type="submit" loading={loading} fullWidth>
         ورود
       </Button>
     </form>

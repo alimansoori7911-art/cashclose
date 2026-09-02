@@ -49,6 +49,15 @@ function safeRemove(key: string): void {
 export const session = {
   getToken: (): string | null => safeGet(TOKEN_KEY),
 
+  /**
+   * رشتهٔ خام کاربر — مبنای تشخیص تغییر در `useSyncExternalStore`.
+   *
+   * چرا لازم است: `getUser()` هر بار با `JSON.parse` یک شیء تازه
+   * می‌سازد؛ اگر مستقیم به‌عنوان snapshot استفاده شود، React هر رندر
+   * آن را «تغییر» می‌بیند و در حلقهٔ بی‌نهایت می‌افتد.
+   */
+  getUserRaw: (): string | null => safeGet(USER_KEY),
+
   getUser(): SessionUser | null {
     const raw = safeGet(USER_KEY);
     if (!raw) return null;
