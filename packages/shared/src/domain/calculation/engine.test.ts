@@ -1,15 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
-import {
-  CashStatus,
-  calculateCashRegister,
-  type CalculationInput,
-} from './cash-calculation.js';
-import {
-  FormulaSide,
-  TRANSACTION_TYPES,
-  TransactionType,
-} from './transaction-types.js';
+import { TransactionType } from '../transactions/index.js';
+import { calculateCashRegister } from './engine.js';
+import { CashStatus, type CalculationInput } from './types.js';
 
 describe('calculateCashRegister', () => {
   it('سناریوی واقعی فایل اکسل را بازتولید می‌کند', () => {
@@ -135,31 +128,3 @@ describe('calculateCashRegister', () => {
   });
 });
 
-describe('جدول انواع تراکنش', () => {
-  it('شناسه‌های تکراری ندارد', () => {
-    const ids = TRANSACTION_TYPES.map((d) => d.type);
-    expect(new Set(ids).size).toBe(ids.length);
-  });
-
-  it('هر سه سمت فرمول قلم دارند', () => {
-    for (const side of Object.values(FormulaSide)) {
-      const items = TRANSACTION_TYPES.filter((d) => d.side === side);
-      expect(items.length).toBeGreaterThan(0);
-    }
-  });
-
-  it('شامل هر ۶ قلم جمع اسناد طبق سند است', () => {
-    const documentTypes = TRANSACTION_TYPES.filter(
-      (d) => d.side === FormulaSide.DOCUMENT,
-    ).map((d) => d.type);
-
-    expect(documentTypes).toEqual([
-      TransactionType.CHEQUE,
-      TransactionType.POS,
-      TransactionType.CARD_TO_CARD,
-      TransactionType.CASH,
-      TransactionType.FOREIGN_CURRENCY,
-      TransactionType.ONLINE_GATEWAY,
-    ]);
-  });
-});

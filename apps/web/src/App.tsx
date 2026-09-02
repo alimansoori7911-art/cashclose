@@ -8,8 +8,8 @@ import {
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 
-import { NumberInput } from './components/ui/NumberInput';
-import { CashStatusBadge } from './components/ui/StatusBadge';
+import { NumberInput } from './components/ui/NumberInput/index';
+import { CashStatusBadge } from './components/ui/StatusBadge/index';
 import { api } from './lib/api';
 
 /**
