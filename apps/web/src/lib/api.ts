@@ -1,5 +1,7 @@
 import axios, { AxiosError } from 'axios';
 
+import { session } from '../features/auth/session';
+
 /**
  * کلاینت HTTP.
  *
@@ -12,6 +14,37 @@ const client = axios.create({
   timeout: 15_000,
   headers: { 'Content-Type': 'application/json' },
 });
+
+/** ضمیمه‌کردن توکن به هر درخواست. */
+client.interceptors.request.use((config) => {
+  const token = session.getToken();
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+/**
+ * توکن منقضی یا باطل → پاک‌کردن نشست و بازگشت به صفحهٔ ورود.
+ *
+ * مسیر خودِ ورود استثناست: در آنجا ۴۰۱ یعنی «رمز اشتباه» و باید به‌صورت
+ * پیام خطای فرم نمایش داده شود، نه اینکه کاربر ریدایرکت شود.
+ */
+client.interceptors.response.use(
+  (response) => response,
+  (error: AxiosError) => {
+    const isLoginRequest = error.config?.url?.includes('/auth/login');
+
+    if (error.response?.status === 401 && !isLoginRequest) {
+      session.clear();
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login';
+      }
+    }
+
+    return Promise.reject(error);
+  },
+);
 
 /** پیام‌های خطای استاندارد بک‌اند (بند ۹.۸ سند). */
 const ERROR_MESSAGES: Record<number, string> = {

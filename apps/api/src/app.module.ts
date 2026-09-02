@@ -3,8 +3,13 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 
+import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
+import { RolesGuard } from './common/guards/roles.guard';
 import { BigIntInterceptor } from './common/interceptors/bigint.interceptor';
+import { AuditModule } from './modules/audit/audit.module';
+import { AuthModule } from './modules/auth/auth.module';
 import { HealthModule } from './modules/health/health.module';
+import { UsersModule } from './modules/users/users.module';
 import { PrismaModule } from './common/prisma/prisma.module';
 import { validateEnv } from './config/env.validation';
 
@@ -28,11 +33,19 @@ import { validateEnv } from './config/env.validation';
     }),
 
     PrismaModule,
+    AuditModule,
+    AuthModule,
+    UsersModule,
     HealthModule,
   ],
   providers: [
-    // محدودیت نرخ درخواست به‌صورت سراسری (بند ۷ فازبندی).
+    // ترتیب این Guardها مهم است و به همین ترتیب اجرا می‌شوند:
+    //   ۱. محدودیت نرخ درخواست (بند ۷ فازبندی)
+    //   ۲. احراز هویت — پیش‌فرض «بسته»؛ استثنا فقط با @Public()
+    //   ۳. مجوز نقش — فقط روی مسیرهایی که @Roles() دارند
     { provide: APP_GUARD, useClass: ThrottlerGuard },
+    { provide: APP_GUARD, useClass: JwtAuthGuard },
+    { provide: APP_GUARD, useClass: RolesGuard },
     // مبالغ BigInt پیش از سریال‌سازی JSON تبدیل می‌شوند.
     { provide: APP_INTERCEPTOR, useClass: BigIntInterceptor },
   ],

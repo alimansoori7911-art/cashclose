@@ -5,12 +5,16 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
 
 import { AppModule } from './app.module';
+import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const config = app.get(ConfigService);
 
   app.use(helmet());
+
+  // قالب یکسان و فارسی برای همهٔ خطاها.
+  app.useGlobalFilters(new HttpExceptionFilter());
 
   // همهٔ مسیرها زیر /api/v1 قرار می‌گیرند (بند ۹ سند).
   app.setGlobalPrefix('api');

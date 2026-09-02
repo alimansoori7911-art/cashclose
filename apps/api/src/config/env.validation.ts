@@ -29,7 +29,16 @@ const envSchema = z.object({
       (value) => !value.includes('CHANGE_ME'),
       'JWT_SECRET هنوز مقدار پیش‌فرض نمونه است؛ یک مقدار تصادفی جایگزین کنید.',
     ),
-  JWT_EXPIRES_IN: z.string().default('12h'),
+  // قالب مدت‌زمان کتابخانهٔ ms مثل «12h»، «30m»، «7d» — اعتبارسنجی
+  // اینجا انجام می‌شود تا مقدار بی‌معنا به‌جای خطای زمان اجرا، همان
+  // لحظهٔ استارت گرفته شود.
+  JWT_EXPIRES_IN: z
+    .string()
+    .regex(
+      /^\d+(\.\d+)?\s*(ms|s|m|h|d|w|y)$/i,
+      'JWT_EXPIRES_IN باید قالبی مانند «12h» یا «30m» داشته باشد.',
+    )
+    .default('12h'),
   PASSWORD_RESET_TTL_MINUTES: z.coerce.number().int().positive().default(30),
 
   STORAGE_DRIVER: z.enum(['local', 's3']).default('local'),
