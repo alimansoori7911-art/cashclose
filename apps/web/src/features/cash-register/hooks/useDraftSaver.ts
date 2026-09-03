@@ -27,9 +27,15 @@ export function useDraftSaver(
     setError(null);
 
     try {
-      await api.patch(`/cash-registers/${registerId}/draft`, {
+      const result = await api.patch<{
+        transactions: { id: string; type: string; sortOrder: number }[];
+      }>(`/cash-registers/${registerId}/draft`, {
         transactions: form.toPayload(),
       });
+
+      // شناسهٔ ردیف‌های تازه‌ساخته‌شده برمی‌گردد تا بتوان به آن‌ها تصویر
+      // پیوست کرد.
+      form.applySavedIds(result.transactions);
       form.setDirty(false);
       setNotice('پیش‌نویس ذخیره شد.');
       setTimeout(() => setNotice(null), 2500);

@@ -19,6 +19,18 @@ import { MAX_AMOUNT } from '@cashclose/shared';
 
 /** یک ردیف تراکنش در فرم صندوق. */
 export class TransactionInputDto {
+  /**
+   * شناسهٔ ردیف موجود.
+   *
+   * اگر داده شود، همان رکورد به‌روزرسانی می‌شود به‌جای اینکه حذف و
+   * دوباره ساخته شود — بدون این، تصاویر پیوست‌شده به تراکنش با هر
+   * ذخیرهٔ خودکار از بین می‌رفتند (رابطهٔ uploads آبشاری است).
+   */
+  @ApiPropertyOptional({ description: 'شناسهٔ ردیف موجود (برای حفظ تصاویر)' })
+  @IsOptional()
+  @IsUUID(undefined, { message: 'شناسهٔ تراکنش معتبر نیست.' })
+  id?: string;
+
   @ApiProperty({ enum: TransactionType })
   @IsEnum(TransactionType, { message: 'نوع تراکنش معتبر نیست.' })
   type!: TransactionType;

@@ -1,6 +1,7 @@
 import axios, { AxiosError } from 'axios';
 
 import { session } from '../features/auth/session';
+import { ApiError, toApiError } from './api-error';
 
 /**
  * کلاینت HTTP.
@@ -46,54 +47,6 @@ client.interceptors.response.use(
   },
 );
 
-/** پیام‌های خطای استاندارد بک‌اند (بند ۹.۸ سند). */
-const ERROR_MESSAGES: Record<number, string> = {
-  400: 'اطلاعات ارسالی معتبر نیست.',
-  401: 'نام کاربری یا رمز عبور اشتباه است.',
-  403: 'این عملیات برای نقش شما مجاز نیست.',
-  404: 'مورد درخواستی یافت نشد.',
-  409: 'این عملیات با وضعیت فعلی سامانه سازگار نیست.',
-  413: 'حجم فایل بیش از حد مجاز است.',
-  415: 'قالب فایل پشتیبانی نمی‌شود.',
-  429: 'تعداد درخواست‌ها بیش از حد مجاز است. کمی بعد دوباره تلاش کنید.',
-  500: 'خطای غیرمنتظره در سرور رخ داد.',
-};
-
-export class ApiError extends Error {
-  constructor(
-    message: string,
-    readonly status: number,
-    readonly code?: string,
-  ) {
-    super(message);
-    this.name = 'ApiError';
-  }
-}
-
-function toApiError(error: unknown): ApiError {
-  if (error instanceof AxiosError) {
-    // خطای شبکه: درخواست اصلاً به سرور نرسیده است.
-    if (!error.response) {
-      return new ApiError(
-        'ارتباط با سرور برقرار نشد. اتصال اینترنت خود را بررسی کنید.',
-        0,
-        'NETWORK_ERROR',
-      );
-    }
-
-    const { status, data } = error.response;
-    const payload = data as { message?: string; error?: string } | undefined;
-
-    return new ApiError(
-      payload?.message ?? ERROR_MESSAGES[status] ?? 'خطای ناشناخته.',
-      status,
-      payload?.error,
-    );
-  }
-
-  return new ApiError('خطای ناشناخته.', 0);
-}
-
 export const api = {
   async get<T>(url: string, params?: Record<string, unknown>): Promise<T> {
     try {
@@ -130,6 +83,26 @@ export const api = {
       throw toApiError(error);
     }
   },
+
+  /**
+   * ارسال فایل.
+   *
+   * `Content-Type` عمداً تنظیم نمی‌شود: مرورگر باید خودش آن را همراه
+   * `boundary` بسازد، وگرنه سرور نمی‌تواند بدنه را تجزیه کند.
+   */
+  async upload<T>(url: string, formData: FormData): Promise<T> {
+    try {
+      const response = await client.post<T>(url, formData, {
+        headers: { 'Content-Type': undefined },
+        // آپلود از درخواست‌های معمولی کندتر است.
+        timeout: 60_000,
+      });
+      return response.data;
+    } catch (error) {
+      throw toApiError(error);
+    }
+  },
 };
 
+export { ApiError };
 export { client as axiosClient };

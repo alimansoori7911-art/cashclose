@@ -26,9 +26,11 @@ export function useLoadedRegisterForm(detail: RegisterDetail | undefined) {
 
     const saved = detail.transactions.map((t) =>
       createRow(t.type as FormRow['type'], {
+        id: t.id,
         amount: t.amount,
         description: t.description ?? '',
         terminalId: t.terminalId,
+        images: t.uploads ?? [],
       }),
     );
 

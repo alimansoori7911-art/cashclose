@@ -30,20 +30,37 @@ export class RegisterDraftService {
     const register = await this.loadEditable(actor, id);
 
     await this.prisma.$transaction(async (tx) => {
-      await tx.transaction.deleteMany({ where: { cashRegisterId: id } });
+      // ردیف‌هایی که شناسه دارند به‌روزرسانی می‌شوند و بقیه حذف؛ حذف و
+      // ساخت دوبارهٔ همه، تصاویر پیوست را آبشاری از بین می‌برد.
+      const keepIds = dto.transactions
+        .map((t) => t.id)
+        .filter((value): value is string => Boolean(value));
 
-      if (dto.transactions.length > 0) {
-        await tx.transaction.createMany({
-          data: dto.transactions.map((t, index) => ({
-            tenantId: register.tenantId,
-            cashRegisterId: id,
-            type: t.type,
-            amount: BigInt(t.amount),
-            description: t.description ?? null,
-            terminalId: t.terminalId ?? null,
-            sortOrder: t.sortOrder ?? index,
-          })),
-        });
+      await tx.transaction.deleteMany({
+        where: { cashRegisterId: id, id: { notIn: keepIds } },
+      });
+
+      for (const [index, item] of dto.transactions.entries()) {
+        const data = {
+          type: item.type,
+          amount: BigInt(item.amount),
+          description: item.description ?? null,
+          terminalId: item.terminalId ?? null,
+          sortOrder: item.sortOrder ?? index,
+        };
+
+        if (item.id) {
+          // `updateMany` با قید صندوق: شناسهٔ تراکنشِ صندوق دیگری قابل
+          // تغییر نیست، حتی اگر حدس زده شود.
+          await tx.transaction.updateMany({
+            where: { id: item.id, cashRegisterId: id },
+            data,
+          });
+        } else {
+          await tx.transaction.create({
+            data: { ...data, tenantId: register.tenantId, cashRegisterId: id },
+          });
+        }
       }
 
       if (dto.finalNotes !== undefined) {
@@ -56,6 +73,14 @@ export class RegisterDraftService {
 
     const result = await this.calculation.recalculateAndSave(id);
 
+    // شناسهٔ ردیف‌ها برگردانده می‌شود تا فرانت‌اند در ذخیرهٔ بعدی آن‌ها
+    // را بفرستد و تصاویر پیوست حفظ شوند.
+    const transactions = await this.prisma.transaction.findMany({
+      where: { cashRegisterId: id },
+      select: { id: true, type: true, sortOrder: true },
+      orderBy: [{ type: 'asc' }, { sortOrder: 'asc' }],
+    });
+
     return {
       id,
       status: register.status,
@@ -65,6 +90,7 @@ export class RegisterDraftService {
       difference: result.difference,
       cashStatus: result.status,
       canClose: result.canClose,
+      transactions,
     };
   }
 

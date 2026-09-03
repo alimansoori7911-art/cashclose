@@ -17,6 +17,14 @@ export interface RegisterSummary {
   cashier: { id: string; fullName: string };
 }
 
+export interface RegisterUpload {
+  id: string;
+  originalName: string;
+  mimeType: string;
+  sizeBytes: number;
+  createdAt: string;
+}
+
 export interface RegisterTransaction {
   id: string;
   type: string;
@@ -25,6 +33,7 @@ export interface RegisterTransaction {
   terminalId: string | null;
   sortOrder: number;
   terminal: { id: string; name: string; bank: string | null } | null;
+  uploads: RegisterUpload[];
 }
 
 export interface RegisterDetail extends RegisterSummary {

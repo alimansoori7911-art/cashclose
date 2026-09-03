@@ -15,7 +15,7 @@ import {
   OPEN_STATUSES,
 } from '../cash-register.rules';
 import type { CreateCashRegisterDto } from '../dto/create-register.dto';
-import { REGISTER_SUMMARY_FIELDS } from './register-query.service';
+import { REGISTER_SUMMARY_FIELDS } from './register-fields';
 
 /** ایجاد صندوق روزانه. */
 @Injectable()

@@ -5,6 +5,12 @@ import {
 } from '@cashclose/shared';
 import { useCallback, useMemo, useState } from 'react';
 
+import {
+  assignSavedIds,
+  rowsToPayload,
+  type SavedTransaction,
+} from './row-identity';
+
 /**
  * وضعیت فرم صندوق و محاسبهٔ زندهٔ اختلاف.
  *
@@ -13,13 +19,24 @@ import { useCallback, useMemo, useState } from 'react';
  * سرور هنگام بستن صندوق بررسی می‌کند.
  */
 
+/** یک تصویر پیوست‌شده به ردیف. */
+export interface RowImage {
+  id: string;
+  originalName: string;
+  mimeType: string;
+  sizeBytes: number;
+}
+
 /** یک ردیف در فرم؛ `key` فقط برای React است و به سرور نمی‌رود. */
 export interface FormRow {
   key: string;
+  /** شناسهٔ رکورد در دیتابیس؛ تا اولین ذخیره `null` است. */
+  id: string | null;
   type: TransactionType;
   amount: number | null;
   description: string;
   terminalId: string | null;
+  images: RowImage[];
 }
 
 let rowCounter = 0;
@@ -34,10 +51,12 @@ export function createRow(
 ): FormRow {
   return {
     key: nextKey(),
+    id: null,
     type,
     amount: null,
     description: '',
     terminalId: null,
+    images: [],
     ...overrides,
   };
 }
@@ -71,6 +90,17 @@ export function useRegisterForm(initialRows: FormRow[] = []) {
     setDirty(false);
   }, []);
 
+  /**
+   * نشاندن شناسه‌های بازگشتی از سرور روی ردیف‌ها.
+   *
+   * ردیفی که تازه ساخته شده تا پیش از این شناسه نداشت و نمی‌شد به آن
+   * تصویر پیوست کرد. تطبیق بر اساس نوع و ترتیب انجام می‌شود، چون همان
+   * چیزی است که سرور هم بر اساسش مرتب می‌کند.
+   */
+  const applySavedIds = useCallback((saved: SavedTransaction[]) => {
+    setRows((current) => assignSavedIds(current, saved));
+  }, []);
+
   /** نتیجهٔ محاسبه — با هر تغییر ردیف‌ها دوباره حساب می‌شود. */
   const calculation: CashCalculationResult = useMemo(
     () =>
@@ -80,22 +110,8 @@ export function useRegisterForm(initialRows: FormRow[] = []) {
     [rows],
   );
 
-  /** ردیف‌های آمادهٔ ارسال — ردیف‌های کاملاً خالی حذف می‌شوند. */
-  const toPayload = useCallback(
-    () =>
-      rows
-        .filter((row) => row.amount !== null || row.description.trim() !== '')
-        .map((row, index) => ({
-          type: row.type,
-          amount: row.amount ?? 0,
-          ...(row.description.trim()
-            ? { description: row.description.trim() }
-            : {}),
-          ...(row.terminalId ? { terminalId: row.terminalId } : {}),
-          sortOrder: index,
-        })),
-    [rows],
-  );
+  /** ردیف‌های آمادهٔ ارسال به سرور. */
+  const toPayload = useCallback(() => rowsToPayload(rows), [rows]);
 
   return {
     rows,
@@ -106,6 +122,7 @@ export function useRegisterForm(initialRows: FormRow[] = []) {
     addRow,
     removeRow,
     replaceAll,
+    applySavedIds,
     toPayload,
   };
 }

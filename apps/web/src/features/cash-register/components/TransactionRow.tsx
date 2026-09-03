@@ -1,5 +1,6 @@
 import { getTransactionType } from '@cashclose/shared';
 
+import { ImageUploader } from '../../../components/ui/ImageUploader/index';
 import { NumberInput } from '../../../components/ui/NumberInput/index';
 import type { FormRow } from '../hooks/useRegisterForm';
 
@@ -69,6 +70,25 @@ export function TransactionRow({ row, disabled, onChange, onRemove }: Props) {
           aria-label={`توضیح ${definition.label}`}
           className="mt-2 w-full rounded border border-border bg-bg px-3 py-1.5 text-sm text-text placeholder:text-text-muted focus:border-primary focus:outline-none disabled:bg-surface-muted"
         />
+      )}
+
+      {definition.hasImages && (
+        <div className="mt-2">
+          {row.id ? (
+            <ImageUploader
+              transactionId={row.id}
+              images={row.images}
+              readOnly={disabled}
+              label={`تصاویر ${definition.label}`}
+            />
+          ) : (
+            // پیش از اولین ذخیره، تراکنش هنوز شناسه ندارد و تصویر جایی
+            // برای پیوست‌شدن پیدا نمی‌کند.
+            <p className="text-xs text-text-muted">
+              برای افزودن تصویر، ابتدا مبلغ را وارد و ذخیره کنید.
+            </p>
+          )}
+        </div>
       )}
     </div>
   );
