@@ -1,32 +1,55 @@
-import { Controller, Get, Param, ParseUUIDPipe, Query } from '@nestjs/common';
-import { UserRole } from '@prisma/client';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Patch,
+  Post,
+  Query,
+} from '@nestjs/common';
+import { UserRole, UserStatus } from '@prisma/client';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 
-import { TenantId } from '../../common/decorators/current-user.decorator';
+import {
+  CurrentUser,
+  TenantId,
+} from '../../common/decorators/current-user.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { PaginationDto } from '../../common/pagination/pagination.dto';
+import type { RequestUser } from '../../common/tenant/request-user';
+import {
+  CreateUserDto,
+  ResetUserPasswordDto,
+  UpdateUserDto,
+} from './dto/user.dto';
+import { UserPasswordService } from './user-password.service';
+import { UsersQuery } from './users.query';
 import { UsersService } from './users.service';
 
-/**
- * مسیرهای کاربران.
- *
- * در این فاز فقط خواندن پیاده شده؛ ساخت و ویرایش کاربر در فاز ۲
- * (مدیریت فروشگاه) اضافه می‌شود.
- */
+/** مدیریت کاربران — فقط مدیر فروشگاه و مالک. */
 @ApiTags('users')
 @ApiBearerAuth()
 @Controller('users')
 @Roles(UserRole.store_manager, UserRole.owner)
 export class UsersController {
-  constructor(private readonly users: UsersService) {}
+  constructor(
+    private readonly users: UsersService,
+    private readonly query: UsersQuery,
+    private readonly userPasswords: UserPasswordService,
+  ) {}
 
   @Get()
   @ApiOperation({ summary: 'فهرست کاربران مجموعه' })
   findAll(
     @TenantId() tenantId: string,
+    @Query() pagination: PaginationDto,
     @Query('role') role?: UserRole,
     @Query('branchId') branchId?: string,
+    @Query('status') status?: UserStatus,
   ) {
-    return this.users.findAll(tenantId, { role, branchId });
+    return this.query.findAll(tenantId, pagination, { role, branchId, status });
   }
 
   @Get(':id')
@@ -35,6 +58,41 @@ export class UsersController {
     @TenantId() tenantId: string,
     @Param('id', ParseUUIDPipe) id: string,
   ) {
-    return this.users.findOne(tenantId, id);
+    return this.query.findOne(tenantId, id);
+  }
+
+  @Post()
+  @ApiOperation({ summary: 'ایجاد کاربر' })
+  create(@CurrentUser() user: RequestUser, @Body() dto: CreateUserDto) {
+    return this.users.create(user, dto);
+  }
+
+  @Patch(':id')
+  @ApiOperation({ summary: 'ویرایش کاربر (نام، نقش، وضعیت، شعبه)' })
+  update(
+    @CurrentUser() user: RequestUser,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateUserDto,
+  ) {
+    return this.users.update(user, id, dto);
+  }
+
+  @Patch(':id/password')
+  @ApiOperation({ summary: 'بازنشانی رمز عبور کاربر توسط مدیر' })
+  resetPassword(
+    @CurrentUser() user: RequestUser,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: ResetUserPasswordDto,
+  ) {
+    return this.userPasswords.reset(user, id, dto.newPassword);
+  }
+
+  @Delete(':id')
+  @ApiOperation({ summary: 'غیرفعال‌سازی کاربر (بدون حذف داده)' })
+  deactivate(
+    @CurrentUser() user: RequestUser,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.users.deactivate(user, id);
   }
 }

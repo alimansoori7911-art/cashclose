@@ -13,7 +13,7 @@ import {
   DEMO_PASSWORD,
   STORE,
   TENANT,
-  TERMINAL_BANKS,
+  TERMINALS,
   USERS,
 } from './data';
 
@@ -75,17 +75,16 @@ async function seed() {
     });
   }
 
-  for (const [index, bank] of TERMINAL_BANKS.entries()) {
-    const id = `00000000-0000-0000-0000-00000000003${index}`;
+  for (const [index, terminal] of TERMINALS.entries()) {
     await prisma.posTerminal.upsert({
-      where: { id },
+      where: { id: terminal.id },
       update: {},
       create: {
-        id,
+        id: terminal.id,
         tenantId: tenant.id,
         branchId: mainBranch.id,
         name: `کارتخوان ${index + 1}`,
-        bank,
+        bank: terminal.bank,
       },
     });
   }

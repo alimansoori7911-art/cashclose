@@ -5,6 +5,7 @@ import { PassportModule } from '@nestjs/passport';
 
 import { AuthController } from './auth.controller';
 import { AuthService } from './services/auth.service';
+import { LoginLookupService } from './services/login-lookup.service';
 import { LoginThrottleService } from './services/login-throttle.service';
 import { PasswordResetService } from './services/password-reset.service';
 import { PasswordService } from './services/password.service';
@@ -36,6 +37,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
     PasswordResetService,
     PasswordService,
     LoginThrottleService,
+    LoginLookupService,
     JwtStrategy,
   ],
   exports: [PasswordService],

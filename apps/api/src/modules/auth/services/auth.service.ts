@@ -4,7 +4,7 @@ import {
   type OnModuleInit,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { UserStatus } from '@prisma/client';
+import { UserStatus, type UserRole } from '@prisma/client';
 
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import type {
@@ -13,6 +13,7 @@ import type {
 } from '../../../common/tenant/request-user';
 import { AuditService } from '../../audit/audit.service';
 import type { LoginDto } from '../dto/login.dto';
+import { LoginLookupService } from './login-lookup.service';
 import { LoginThrottleService } from './login-throttle.service';
 import { PasswordService } from './password.service';
 
@@ -33,6 +34,7 @@ export class AuthService implements OnModuleInit {
     private readonly jwt: JwtService,
     private readonly passwords: PasswordService,
     private readonly throttle: LoginThrottleService,
+    private readonly lookup: LoginLookupService,
     private readonly audit: AuditService,
   ) {}
 
@@ -52,30 +54,9 @@ export class AuthService implements OnModuleInit {
    */
   async login(dto: LoginDto, ip?: string): Promise<LoginResult> {
     const throttleKey = `${dto.username}:${ip ?? 'unknown'}`;
-    const lockSeconds = this.throttle.getLockRemainingSeconds(throttleKey);
+    this.throttle.assertNotLocked(throttleKey);
 
-    if (lockSeconds !== null) {
-      throw new UnauthorizedException(
-        `به دلیل تلاش‌های ناموفق، ورود موقتاً مسدود است. ${Math.ceil(
-          lockSeconds / 60,
-        )} دقیقهٔ دیگر تلاش کنید.`,
-      );
-    }
-
-    const user = await this.prisma.user.findFirst({
-      where: { username: dto.username },
-      select: {
-        id: true,
-        tenantId: true,
-        username: true,
-        fullName: true,
-        role: true,
-        branchId: true,
-        status: true,
-        passwordHash: true,
-        tenant: { select: { status: true } },
-      },
-    });
+    const user = await this.lookup.findForLogin(dto.username, dto.tenantId);
 
     const passwordValid = user
       ? await this.passwords.verify(user.passwordHash, dto.password)
@@ -110,6 +91,18 @@ export class AuthService implements OnModuleInit {
       ipAddress: ip,
     });
 
+    return this.issueToken(user);
+  }
+
+  /** ساخت توکن دسترسی و بستهٔ اطلاعات کاربر برای پاسخ. */
+  private async issueToken(user: {
+    id: string;
+    tenantId: string;
+    username: string;
+    fullName: string;
+    role: UserRole;
+    branchId: string | null;
+  }): Promise<LoginResult> {
     const payload: JwtPayload = {
       sub: user.id,
       tenantId: user.tenantId,

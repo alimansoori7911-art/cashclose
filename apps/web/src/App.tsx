@@ -1,3 +1,4 @@
+import { UserRole, type UserRole as Role } from '@cashclose/shared';
 import {
   BrowserRouter,
   Navigate,
@@ -8,12 +9,25 @@ import {
 import type { ReactNode } from 'react';
 
 import { useAuth } from './features/auth/hooks/useAuth';
+import { AdminPage } from './routes/AdminPage';
 import { DashboardPage } from './routes/DashboardPage';
 import { LoginPage } from './routes/LoginPage';
 
-/** مسیری که بدون نشست معتبر به صفحهٔ ورود هدایت می‌شود. */
-function RequireAuth({ children }: { children: ReactNode }) {
-  const { isAuthenticated } = useAuth();
+/**
+ * مسیر محافظت‌شده.
+ *
+ * `roles` اختیاری است؛ اگر داده شود، کاربرِ بدون آن نقش به داشبورد
+ * برمی‌گردد. این فقط لایهٔ راحتی کاربر است — تصمیم قطعی دسترسی همیشه
+ * سمت بک‌اند گرفته می‌شود.
+ */
+function RequireAuth({
+  children,
+  roles,
+}: {
+  children: ReactNode;
+  roles?: Role[];
+}) {
+  const { user, isAuthenticated } = useAuth();
   const location = useLocation();
 
   if (!isAuthenticated) {
@@ -21,10 +35,13 @@ function RequireAuth({ children }: { children: ReactNode }) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
+  if (roles && user && !roles.includes(user.role)) {
+    return <Navigate to="/" replace />;
+  }
+
   return <>{children}</>;
 }
 
-/** صفحهٔ ورود برای کاربرِ از قبل واردشده معنا ندارد. */
 function RedirectIfAuthenticated({ children }: { children: ReactNode }) {
   const { isAuthenticated } = useAuth();
   return isAuthenticated ? <Navigate to="/" replace /> : <>{children}</>;
@@ -47,6 +64,14 @@ export function App() {
           element={
             <RequireAuth>
               <DashboardPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/admin"
+          element={
+            <RequireAuth roles={[UserRole.STORE_MANAGER, UserRole.OWNER]}>
+              <AdminPage />
             </RequireAuth>
           }
         />

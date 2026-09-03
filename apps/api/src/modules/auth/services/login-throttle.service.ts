@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
 interface AttemptRecord {
@@ -29,6 +29,22 @@ export class LoginThrottleService {
     this.maxAttempts = config.get<number>('LOGIN_MAX_ATTEMPTS', 5);
     this.lockoutMs =
       config.get<number>('LOGIN_LOCKOUT_MINUTES', 15) * 60 * 1000;
+  }
+
+  /**
+   * اگر ورود قفل است، استثنا پرتاب می‌کند.
+   *
+   * ساخت پیام اینجاست تا سرویس ورود درگیر جزئیات زمان‌بندی قفل نشود.
+   */
+  assertNotLocked(key: string): void {
+    const seconds = this.getLockRemainingSeconds(key);
+    if (seconds === null) return;
+
+    throw new UnauthorizedException(
+      `به دلیل تلاش‌های ناموفق، ورود موقتاً مسدود است. ${Math.ceil(
+        seconds / 60,
+      )} دقیقهٔ دیگر تلاش کنید.`,
+    );
   }
 
   /** اگر قفل باشد، تعداد ثانیه‌های باقی‌مانده؛ وگرنه `null`. */

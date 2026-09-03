@@ -1,7 +1,15 @@
 import { Injectable, Logger } from '@nestjs/common';
-import type { Prisma } from '@prisma/client';
 
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { sanitizeMeta } from './sanitize-meta';
+
+/**
+ * محتوای `meta` — شیئی ساده و قابل سریال‌سازی.
+ *
+ * `undefined` هم پذیرفته می‌شود چون DTOهای ویرایش، فیلدهای پرنشده را
+ * `undefined` می‌گذارند؛ پیش از ذخیره حذفشان می‌کنیم.
+ */
+export type AuditMeta = Record<string, unknown>;
 
 export interface AuditEntry {
   tenantId?: string | null;
@@ -9,7 +17,7 @@ export interface AuditEntry {
   action: string;
   entityType?: string;
   entityId?: string;
-  meta?: Prisma.InputJsonValue;
+  meta?: AuditMeta;
   ipAddress?: string;
   userAgent?: string;
 }
@@ -36,7 +44,7 @@ export class AuditService {
           action: entry.action,
           entityType: entry.entityType ?? null,
           entityId: entry.entityId ?? null,
-          meta: entry.meta,
+          meta: sanitizeMeta(entry.meta),
           ipAddress: entry.ipAddress?.slice(0, 64) ?? null,
           userAgent: entry.userAgent ?? null,
         },

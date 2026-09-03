@@ -6,9 +6,13 @@ import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
 import { BigIntInterceptor } from './common/interceptors/bigint.interceptor';
+import { AuditLogsModule } from './modules/audit-logs/audit-logs.module';
 import { AuditModule } from './modules/audit/audit.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { BranchesModule } from './modules/branches/branches.module';
 import { HealthModule } from './modules/health/health.module';
+import { PosTerminalsModule } from './modules/pos-terminals/pos-terminals.module';
+import { StoresModule } from './modules/stores/stores.module';
 import { UsersModule } from './modules/users/users.module';
 import { PrismaModule } from './common/prisma/prisma.module';
 import { validateEnv } from './config/env.validation';
@@ -36,6 +40,10 @@ import { validateEnv } from './config/env.validation';
     AuditModule,
     AuthModule,
     UsersModule,
+    StoresModule,
+    BranchesModule,
+    PosTerminalsModule,
+    AuditLogsModule,
     HealthModule,
   ],
   providers: [
