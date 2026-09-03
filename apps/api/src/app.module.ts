@@ -10,6 +10,7 @@ import { AuditLogsModule } from './modules/audit-logs/audit-logs.module';
 import { AuditModule } from './modules/audit/audit.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { BranchesModule } from './modules/branches/branches.module';
+import { CashRegistersModule } from './modules/cash-registers/cash-registers.module';
 import { HealthModule } from './modules/health/health.module';
 import { PosTerminalsModule } from './modules/pos-terminals/pos-terminals.module';
 import { StoresModule } from './modules/stores/stores.module';
@@ -43,6 +44,7 @@ import { validateEnv } from './config/env.validation';
     StoresModule,
     BranchesModule,
     PosTerminalsModule,
+    CashRegistersModule,
     AuditLogsModule,
     HealthModule,
   ],

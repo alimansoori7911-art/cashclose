@@ -10,6 +10,7 @@ import type { ReactNode } from 'react';
 
 import { useAuth } from './features/auth/hooks/useAuth';
 import { AdminPage } from './routes/AdminPage';
+import { CashRegisterPage } from './routes/CashRegisterPage';
 import { DashboardPage } from './routes/DashboardPage';
 import { LoginPage } from './routes/LoginPage';
 
@@ -64,6 +65,14 @@ export function App() {
           element={
             <RequireAuth>
               <DashboardPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/cash-register"
+          element={
+            <RequireAuth roles={[UserRole.CASHIER]}>
+              <CashRegisterPage />
             </RequireAuth>
           }
         />
