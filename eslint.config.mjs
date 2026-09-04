@@ -26,5 +26,23 @@ export default tseslint.config(
       'no-console': ['warn', { allow: ['warn', 'error'] }],
     },
   },
+  {
+    // اسکریپت‌های تست انتها‌به‌انتها در Node اجرا می‌شوند، نه در مرورگر:
+    // `process` و `console` آنجا کاملاً طبیعی‌اند.
+    files: ['tests/**/*.mjs', 'scripts/**/*.mjs'],
+    languageOptions: {
+      globals: {
+        process: 'readonly',
+        console: 'readonly',
+        fetch: 'readonly',
+        Buffer: 'readonly',
+        FormData: 'readonly',
+        Blob: 'readonly',
+      },
+    },
+    rules: {
+      'no-console': 'off',
+    },
+  },
   prettier,
 );
