@@ -16,7 +16,8 @@
     "db:deploy": "prisma migrate deploy",
     "db:seed": "tsx prisma/seed/index.ts",
     "db:studio": "prisma studio",
-    "db:reset-registers": "tsx prisma/seed/reset-registers.ts"
+    "db:reset-registers": "tsx prisma/seed/reset-registers.ts",
+    "db:demo-history": "tsx prisma/seed/demo-history.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed/index.ts"

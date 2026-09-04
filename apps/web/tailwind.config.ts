@@ -14,6 +14,10 @@ function token(variable: string): string {
 
 export default {
   content: ['./index.html', './src/**/*.{ts,tsx}'],
+  /*
+   * رنگ‌ها از متغیرهای CSS می‌آیند و خودِ متغیرها هم با media query و
+   * هم با کلاس عوض می‌شوند، پس اینجا فقط انتخاب صریح کاربر مهم است.
+   */
   darkMode: 'class',
   theme: {
     extend: {
@@ -49,6 +53,11 @@ export default {
         warning: {
           DEFAULT: token('--color-warning'),
           soft: token('--color-warning-soft'),
+        },
+        chart: {
+          DEFAULT: token('--color-chart'),
+          soft: token('--color-chart-soft'),
+          grid: token('--color-chart-grid'),
         },
       },
       borderRadius: {

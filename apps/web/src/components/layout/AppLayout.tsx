@@ -30,6 +30,11 @@ const NAV_ITEMS: { path: string; label: string; roles: Role[] }[] = [
     roles: [UserRole.ACCOUNTANT, UserRole.OWNER],
   },
   {
+    path: '/reports',
+    label: 'گزارش‌ها',
+    roles: [UserRole.OWNER, UserRole.FINANCIAL_MANAGER, UserRole.STORE_MANAGER],
+  },
+  {
     path: '/admin',
     label: 'مدیریت فروشگاه',
     roles: [UserRole.STORE_MANAGER, UserRole.OWNER],

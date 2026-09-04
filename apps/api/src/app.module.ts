@@ -12,6 +12,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { BranchesModule } from './modules/branches/branches.module';
 import { CashRegistersModule } from './modules/cash-registers/cash-registers.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
+import { ReportsModule } from './modules/reports/reports.module';
 import { ReviewModule } from './modules/review/review.module';
 import { StorageModule } from './common/storage/storage.module';
 import { UploadsModule } from './modules/uploads/uploads.module';
@@ -51,6 +52,7 @@ import { validateEnv } from './config/env.validation';
     PosTerminalsModule,
     CashRegistersModule,
     ReviewModule,
+    ReportsModule,
     NotificationsModule,
     UploadsModule,
     AuditLogsModule,

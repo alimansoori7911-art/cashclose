@@ -47,7 +47,54 @@
     --color-warning: 180 83 9;
     --color-warning-soft: 254 243 199;
 
+    /* ─── نمودارها ─── */
+    /* تک‌رنگِ ترتیبی برای نمودار روند و مقایسه. این مقادیر با ابزار
+       اعتبارسنجی رنگ آزموده شده‌اند: کنتراست بالای ۳:۱ روی سطح و
+       داخل بازهٔ روشنایی مجاز. */
+    --color-chart: 37 99 235;
+    --color-chart-soft: 219 234 254;
+    --color-chart-grid: 226 232 240;
+
     --radius: 0.625rem;
+  }
+
+  /*
+   * حالت تیره در دو حالت فعال می‌شود:
+   *  • انتخاب صریح کاربر → کلاس `dark` روی <html>
+   *  • تنظیم سیستم‌عامل   → media query، مگر اینکه کاربر صریحاً روشن
+   *    را انتخاب کرده باشد (کلاس `light`)
+   *
+   * بدون بلوک media، تنظیم سیستم‌عامل نادیده گرفته می‌شد و حالت تیره
+   * عملاً هرگز فعال نمی‌شد.
+   */
+  @media (prefers-color-scheme: dark) {
+    :root:not(.light) {
+      --color-bg: 8 15 26;
+      --color-surface: 17 27 43;
+      --color-surface-muted: 25 38 58;
+      --color-border: 40 56 82;
+
+      --color-text: 226 232 240;
+      --color-text-muted: 148 163 184;
+      --color-text-inverse: 15 23 42;
+
+      --color-primary: 96 152 220;
+      --color-primary-hover: 129 175 232;
+      --color-primary-soft: 25 45 72;
+
+      --color-balanced: 74 222 128;
+      --color-balanced-soft: 20 60 40;
+      --color-surplus: 96 165 250;
+      --color-surplus-soft: 23 45 85;
+      --color-shortage: 248 113 113;
+      --color-shortage-soft: 76 26 26;
+      --color-warning: 251 191 36;
+      --color-warning-soft: 69 46 10;
+
+      --color-chart: 59 130 246;
+      --color-chart-soft: 30 58 95;
+      --color-chart-grid: 40 56 82;
+    }
   }
 
   .dark {
@@ -72,6 +119,12 @@
     --color-shortage-soft: 76 26 26;
     --color-warning: 251 191 36;
     --color-warning-soft: 69 46 10;
+
+    /* گام روشن‌تر نمودار برای سطح تیره — جداگانه آزموده شده، نه
+       وارونهٔ خودکار رنگ روشن. */
+    --color-chart: 59 130 246;
+    --color-chart-soft: 30 58 95;
+    --color-chart-grid: 40 56 82;
   }
 
   html {

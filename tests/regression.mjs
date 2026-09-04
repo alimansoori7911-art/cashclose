@@ -382,6 +382,15 @@ check(
 // ══════════════ فاز ۵: فلوی حسابدار ══════════════
 section('فاز ۵ — فلوی حسابدار');
 
+// شمار نسخه‌ها پیش از ارسال. اگر صندوق امروز از اجرای قبلی مانده باشد
+// این عدد صفر نیست، پس باید **افزایش** را سنجید نه مقدار مطلق را.
+const versionsBefore = await call(
+  'GET',
+  `/cash-registers/${registerId}/versions`,
+  accountant.token,
+);
+const baseVersionCount = versionsBefore.body?.length ?? 0;
+
 const closed = await call(
   'PATCH',
   `/cash-registers/${registerId}/close`,
@@ -464,7 +473,11 @@ const versions = await call(
   `/cash-registers/${registerId}/versions`,
   accountant.token,
 );
-check('دو نسخه ثبت شده', versions.body?.length === 2, `${versions.body?.length}`);
+check(
+  'هر ارسال یک نسخه ثبت می‌کند (دو ارسال = دو نسخهٔ جدید)',
+  versions.body?.length === baseVersionCount + 2,
+  `${baseVersionCount} → ${versions.body?.length}`,
+);
 
 const compare = await call(
   'GET',

@@ -12,6 +12,7 @@ import { useAuth } from './features/auth/hooks/useAuth';
 import { AdminPage } from './routes/AdminPage';
 import { CashRegisterPage } from './routes/CashRegisterPage';
 import { DashboardPage } from './routes/DashboardPage';
+import { ReportsPage } from './routes/ReportsPage';
 import { ReviewDetailPage } from './routes/ReviewDetailPage';
 import { ReviewListPage } from './routes/ReviewListPage';
 import { LoginPage } from './routes/LoginPage';
@@ -91,6 +92,20 @@ export function App() {
           element={
             <RequireAuth roles={[UserRole.ACCOUNTANT, UserRole.OWNER]}>
               <ReviewDetailPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/reports"
+          element={
+            <RequireAuth
+              roles={[
+                UserRole.OWNER,
+                UserRole.FINANCIAL_MANAGER,
+                UserRole.STORE_MANAGER,
+              ]}
+            >
+              <ReportsPage />
             </RequireAuth>
           }
         />
