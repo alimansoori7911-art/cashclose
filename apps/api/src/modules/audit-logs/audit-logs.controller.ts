@@ -4,7 +4,7 @@ import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 
 import { TenantId } from '../../common/decorators/current-user.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
-import { PaginationDto } from '../../common/pagination/pagination.dto';
+import { ListLogsDto } from './dto/list-logs.dto';
 import { AuditLogsService } from './audit-logs.service';
 
 /**
@@ -22,17 +22,11 @@ export class AuditLogsController {
 
   @Get()
   @ApiOperation({ summary: 'فهرست لاگ عملیات' })
-  findAll(
-    @TenantId() tenantId: string,
-    @Query() pagination: PaginationDto,
-    @Query('action') action?: string,
-    @Query('userId') userId?: string,
-    @Query('entityType') entityType?: string,
-  ) {
-    return this.logs.findAll(tenantId, pagination, {
-      action,
-      userId,
-      entityType,
+  findAll(@TenantId() tenantId: string, @Query() query: ListLogsDto) {
+    return this.logs.findAll(tenantId, query, {
+      action: query.action,
+      userId: query.userId,
+      entityType: query.entityType,
     });
   }
 }

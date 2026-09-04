@@ -9,6 +9,7 @@ import { Link, useLocation } from 'react-router-dom';
 import type { ReactNode } from 'react';
 
 import { useAuth } from '../../features/auth/hooks/useAuth';
+import { NotificationBell } from '../../features/notifications/NotificationBell';
 import { Button } from '../ui/Button/index';
 
 /** آیتم‌های منو و نقش‌هایی که به آن‌ها دسترسی دارند. */
@@ -22,6 +23,11 @@ const NAV_ITEMS: { path: string; label: string; roles: Role[] }[] = [
     path: '/cash-register',
     label: 'صندوق روزانه',
     roles: [UserRole.CASHIER],
+  },
+  {
+    path: '/review',
+    label: 'بررسی صندوق‌ها',
+    roles: [UserRole.ACCOUNTANT, UserRole.OWNER],
   },
   {
     path: '/admin',
@@ -62,7 +68,8 @@ export function AppLayout({ children }: { children: ReactNode }) {
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
+            <NotificationBell />
             <div className="text-left">
               <div className="text-sm font-medium text-text">
                 {user.fullName}

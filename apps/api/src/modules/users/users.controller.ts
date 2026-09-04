@@ -9,7 +9,7 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
-import { UserRole, UserStatus } from '@prisma/client';
+import { UserRole } from '@prisma/client';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 
 import {
@@ -17,13 +17,13 @@ import {
   TenantId,
 } from '../../common/decorators/current-user.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
-import { PaginationDto } from '../../common/pagination/pagination.dto';
 import type { RequestUser } from '../../common/tenant/request-user';
 import {
   CreateUserDto,
   ResetUserPasswordDto,
   UpdateUserDto,
 } from './dto/user.dto';
+import { ListUsersDto } from './dto/list-users.dto';
 import { UserPasswordService } from './user-password.service';
 import { UsersQuery } from './users.query';
 import { UsersService } from './users.service';
@@ -42,14 +42,12 @@ export class UsersController {
 
   @Get()
   @ApiOperation({ summary: 'فهرست کاربران مجموعه' })
-  findAll(
-    @TenantId() tenantId: string,
-    @Query() pagination: PaginationDto,
-    @Query('role') role?: UserRole,
-    @Query('branchId') branchId?: string,
-    @Query('status') status?: UserStatus,
-  ) {
-    return this.query.findAll(tenantId, pagination, { role, branchId, status });
+  findAll(@TenantId() tenantId: string, @Query() query: ListUsersDto) {
+    return this.query.findAll(tenantId, query, {
+      role: query.role,
+      branchId: query.branchId,
+      status: query.status,
+    });
   }
 
   @Get(':id')

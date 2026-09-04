@@ -4,7 +4,6 @@ import {
   Delete,
   Get,
   Param,
-  ParseBoolPipe,
   ParseUUIDPipe,
   Patch,
   Post,
@@ -23,6 +22,7 @@ import {
   CreatePosTerminalDto,
   UpdatePosTerminalDto,
 } from './dto/pos-terminal.dto';
+import { ListTerminalsDto } from './dto/list-terminals.dto';
 import { PosTerminalsQuery } from './pos-terminals.query';
 import { PosTerminalsService } from './pos-terminals.service';
 
@@ -43,11 +43,9 @@ export class PosTerminalsController {
   @ApiOperation({ summary: 'فهرست کارتخوان‌ها' })
   findAll(
     @CurrentUser() user: RequestUser,
-    @Query('branchId') branchId?: string,
-    @Query('activeOnly', new ParseBoolPipe({ optional: true }))
-    activeOnly?: boolean,
+    @Query() query: ListTerminalsDto,
   ) {
-    return this.query.findAll(user, branchId, activeOnly ?? false);
+    return this.query.findAll(user, query.branchId, query.activeOnly ?? false);
   }
 
   @Get(':id')

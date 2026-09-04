@@ -21,6 +21,26 @@ const FALLBACK_MESSAGES: Record<number, string> = {
   503: 'سرویس موقتاً در دسترس نیست. کمی بعد دوباره تلاش کنید.',
 };
 
+/**
+ * انتخاب گویاترین پیام از میان خطاهای اعتبارسنجی.
+ *
+ * `class-validator` همهٔ قواعد نقض‌شده را برمی‌گرداند و ترتیبش معکوس
+ * است. برای یک فیلد خالی، پیام «حداکثر ۱۰۰۰ کاراکتر است» اول می‌آید که
+ * کاملاً گیج‌کننده است — پیام «الزامی است» ریشهٔ مشکل را می‌گوید.
+ */
+function pickClearest(messages: string[]): string | undefined {
+  if (messages.length === 0) return undefined;
+
+  const required = messages.find((m) => m.includes('الزامی'));
+  if (required) return required;
+
+  // پیام «حداقل» از «حداکثر» مفیدتر است وقتی کاربر چیزی وارد نکرده.
+  const minimum = messages.find((m) => m.includes('حداقل'));
+  if (minimum) return minimum;
+
+  return messages[0];
+}
+
 export class ApiError extends Error {
   constructor(
     message: string,
@@ -51,9 +71,8 @@ export function toApiError(error: unknown): ApiError {
       | { message?: string | string[]; error?: string }
       | undefined;
 
-    // ValidationPipe آرایه‌ای از پیام‌ها برمی‌گرداند؛ اولی گویاترین است.
     const raw = payload?.message;
-    const message = Array.isArray(raw) ? raw[0] : raw;
+    const message = Array.isArray(raw) ? pickClearest(raw) : raw;
 
     return new ApiError(
       message ?? FALLBACK_MESSAGES[status] ?? 'خطای ناشناخته.',

@@ -8,14 +8,14 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
-import { CashRegisterStatus, UserRole } from '@prisma/client';
+import { UserRole } from '@prisma/client';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
-import { PaginationDto } from '../../common/pagination/pagination.dto';
 import type { RequestUser } from '../../common/tenant/request-user';
 import { CreateCashRegisterDto } from './dto/create-register.dto';
+import { ListRegistersDto } from './dto/list-registers.dto';
 import { SaveDraftDto } from './dto/save-draft.dto';
 import { RegisterCloseService } from './services/register-close.service';
 import { RegisterCreationService } from './services/register-creation.service';
@@ -34,22 +34,14 @@ export class CashRegistersController {
   ) {}
 
   @Get()
-  @ApiOperation({ summary: 'فهرست صندوق‌ها' })
-  findAll(
-    @CurrentUser() user: RequestUser,
-    @Query() pagination: PaginationDto,
-    @Query('status') status?: CashRegisterStatus,
-    @Query('branchId') branchId?: string,
-    @Query('cashierId') cashierId?: string,
-    @Query('dateFrom') dateFrom?: string,
-    @Query('dateTo') dateTo?: string,
-  ) {
-    return this.query.findAll(user, pagination, {
-      status,
-      branchId,
-      cashierId,
-      dateFrom,
-      dateTo,
+  @ApiOperation({ summary: 'فهرست صندوق‌ها با فیلتر' })
+  findAll(@CurrentUser() user: RequestUser, @Query() query: ListRegistersDto) {
+    return this.query.findAll(user, query, {
+      status: query.status,
+      branchId: query.branchId,
+      cashierId: query.cashierId,
+      dateFrom: query.dateFrom,
+      dateTo: query.dateTo,
     });
   }
 

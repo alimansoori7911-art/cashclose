@@ -17,7 +17,7 @@ import {
   TenantId,
 } from '../../common/decorators/current-user.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
-import { PaginationDto } from '../../common/pagination/pagination.dto';
+import { ListBranchesDto } from './dto/list-branches.dto';
 import type { RequestUser } from '../../common/tenant/request-user';
 import { BranchesQuery } from './branches.query';
 import { BranchesService } from './branches.service';
@@ -38,12 +38,8 @@ export class BranchesController {
    */
   @Get()
   @ApiOperation({ summary: 'فهرست شعبه‌ها' })
-  findAll(
-    @TenantId() tenantId: string,
-    @Query() pagination: PaginationDto,
-    @Query('storeId') storeId?: string,
-  ) {
-    return this.query.findAll(tenantId, pagination, storeId);
+  findAll(@TenantId() tenantId: string, @Query() query: ListBranchesDto) {
+    return this.query.findAll(tenantId, query, query.storeId);
   }
 
   @Get(':id')
