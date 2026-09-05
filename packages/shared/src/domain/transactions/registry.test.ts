@@ -57,6 +57,26 @@ describe('جدول انواع تراکنش', () => {
     }
   });
 
+  it('فقط کارتخوان و کارت‌به‌کارت به دستگاه وصل می‌شوند', () => {
+    // اگر قلم تازه‌ای اشتباهاً این پرچم را بگیرد، در فرم مدال تفکیک
+    // دستگاه می‌گیرد که برایش بی‌معناست.
+    const withTerminal = TRANSACTION_TYPES.filter(
+      (def) => def.needsTerminal,
+    ).map((def) => def.type);
+
+    expect(withTerminal).toEqual([
+      TransactionType.POS,
+      TransactionType.CARD_TO_CARD,
+    ]);
+  });
+
+  it('هر قلم نیازمند دستگاه، چندردیفی هم هست', () => {
+    // تفکیک دستگاه بدون امکان افزودن ردیف معنا ندارد.
+    for (const def of TRANSACTION_TYPES) {
+      if (def.needsTerminal) expect(def.isMultiRow).toBe(true);
+    }
+  });
+
   it('نوع ناشناخته را رد می‌کند', () => {
     expect(() =>
       getTransactionType('not_a_real_type' as TransactionType),

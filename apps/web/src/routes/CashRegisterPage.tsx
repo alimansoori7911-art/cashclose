@@ -1,6 +1,5 @@
 import {
   formatJalaliLong,
-  todayIso,
   type CashRegisterStatus,
 } from '@cashclose/shared';
 import { useState } from 'react';
@@ -41,6 +40,11 @@ export function CashRegisterPage() {
   const status = current.data?.status;
   const readOnly = status === 'submitted' || status === 'approved';
 
+  // پاسخ خالی سرور (صندوق باز وجود ندارد) به‌صورت شیء بدون فیلد می‌رسد،
+  // پس هر دو حلقه باید اختیاری باشند نه فقط `data`.
+  const businessDate = current.data?.businessDate?.slice(0, 10) ?? '';
+  const coversUntil = current.data?.coversUntilDate?.slice(0, 10) ?? null;
+
   useAutoSave({
     enabled: Boolean(registerId) && !readOnly,
     isDirty: form.isDirty,
@@ -77,10 +81,10 @@ export function CashRegisterPage() {
         <NoRegisterState
           creating={createRegister.isPending}
           error={createError}
-          onCreate={async () => {
+          onCreate={async (options) => {
             setCreateError(null);
             try {
-              await createRegister.mutateAsync({ businessDate: todayIso() });
+              await createRegister.mutateAsync(options);
             } catch (err) {
               setCreateError(
                 err instanceof ApiError
@@ -100,8 +104,15 @@ export function CashRegisterPage() {
         <div>
           <h1 className="text-xl font-bold text-text">ثبت و بستن صندوق</h1>
           <p className="mt-1 text-sm text-text-muted">
-            {formatJalaliLong(current.data.businessDate.slice(0, 10))} —{' '}
-            {current.data.branch.name}
+            {coversUntil ? (
+              <>
+                {formatJalaliLong(businessDate)} تا{' '}
+                {formatJalaliLong(coversUntil)}
+              </>
+            ) : (
+              formatJalaliLong(businessDate)
+            )}{' '}
+            — {current.data.branch.name}
           </p>
         </div>
         <RegisterStatusBadge status={status as CashRegisterStatus} />
@@ -115,6 +126,13 @@ export function CashRegisterPage() {
       {draft.notice && (
         <Alert tone="success" className="mb-4">
           {draft.notice}
+        </Alert>
+      )}
+      {coversUntil && (
+        <Alert tone="info" className="mb-4">
+          صندوق دوروزه: اقلام {formatJalaliLong(businessDate)} و{' '}
+          {formatJalaliLong(coversUntil)} با هم در همین فرم ثبت و یکجا تراز
+          می‌شوند.
         </Alert>
       )}
       {readOnly && (

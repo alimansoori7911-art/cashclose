@@ -66,6 +66,13 @@ export interface TransactionTypeDefinition {
    * «فروش کل» فقط یک مقدار.
    */
   readonly isMultiRow: boolean;
+  /**
+   * آیا ردیف به دستگاه کارتخوان وصل می‌شود؟
+   *
+   * فقط کارتخوان و کارت‌به‌کارت: مدیر باید بتواند بفهمد کدام دستگاه چقدر
+   * فروش داشته، پس مبلغ بدون دستگاه معنای مدیریتی ندارد.
+   */
+  readonly needsTerminal: boolean;
   /** توضیح کسب‌وکاری برای نمایش در Tooltip راهنما. */
   readonly hint: string;
 }

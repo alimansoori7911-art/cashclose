@@ -19,6 +19,7 @@ export const BALANCE_ADDITIONS: readonly TransactionTypeDefinition[] = [
     hasDescription: false,
     hasImages: true,
     isMultiRow: false,
+    needsTerminal: false,
     hint: 'جمع فروش روز در سیستم حسابداری، به‌همراه عکس صفحهٔ فروش.',
   },
   {
@@ -28,6 +29,7 @@ export const BALANCE_ADDITIONS: readonly TransactionTypeDefinition[] = [
     hasDescription: true,
     hasImages: true,
     isMultiRow: true,
+    needsTerminal: false,
     hint: 'واریز وجه جنس برگشتی به مشتری؛ نام/شمارهٔ مشتری در توضیح و عکس شمارهٔ کارت.',
   },
   {
@@ -37,6 +39,7 @@ export const BALANCE_ADDITIONS: readonly TransactionTypeDefinition[] = [
     hasDescription: true,
     hasImages: false,
     isMultiRow: true,
+    needsTerminal: false,
     hint: 'مشتری در روزهای قبل خرید بدون تسویه داشته و امروز آن را پرداخت کرده است.',
   },
   {
@@ -46,6 +49,7 @@ export const BALANCE_ADDITIONS: readonly TransactionTypeDefinition[] = [
     hasDescription: true,
     hasImages: false,
     isMultiRow: true,
+    needsTerminal: false,
     hint: 'مشتری کالا را نخریده ولی بابت نگهداری کالا بیعانه پرداخت کرده است.',
   },
   {
@@ -55,6 +59,7 @@ export const BALANCE_ADDITIONS: readonly TransactionTypeDefinition[] = [
     hasDescription: true,
     hasImages: false,
     isMultiRow: true,
+    needsTerminal: false,
     hint: 'هزینهٔ جانبی دریافتی از مشتری مانند پیک، خیاطی یا سفارشی‌سازی.',
   },
   {
@@ -64,6 +69,7 @@ export const BALANCE_ADDITIONS: readonly TransactionTypeDefinition[] = [
     hasDescription: true,
     hasImages: false,
     isMultiRow: true,
+    needsTerminal: false,
     hint: 'مثلاً نبود پول خرد برای بازگرداندن، یا فروش پس از بستن صندوق که فردا ثبت می‌شود.',
   },
   {
@@ -73,6 +79,7 @@ export const BALANCE_ADDITIONS: readonly TransactionTypeDefinition[] = [
     hasDescription: true,
     hasImages: true,
     isMultiRow: true,
+    needsTerminal: false,
     hint: 'به‌جای پرداخت نقدیِ کالای برگشتی، سند بستانکاری برای خرید بعدی صادر شده است.',
   },
   {
@@ -82,6 +89,7 @@ export const BALANCE_ADDITIONS: readonly TransactionTypeDefinition[] = [
     hasDescription: true,
     hasImages: true,
     isMultiRow: true,
+    needsTerminal: false,
     hint: 'مخصوص فروشگاه‌های زنجیره‌ای؛ برگشت در یک شعبه و خرید از شعبهٔ دیگر.',
   },
 ] as const;

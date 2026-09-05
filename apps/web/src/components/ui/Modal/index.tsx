@@ -1,4 +1,4 @@
-import { useEffect, useRef, type ReactNode } from 'react';
+import { useEffect, useId, useRef, type ReactNode } from 'react';
 
 /**
  * مدال با رفتار دسترس‌پذیر.
@@ -15,6 +15,8 @@ interface ModalProps {
   children: ReactNode;
   /** بستن با کلیک بیرون؛ برای فرم‌های نیمه‌پرشده بهتر است خاموش باشد. */
   closeOnBackdrop?: boolean;
+  /** `wide` برای محتوای جدولی مثل فهرست دستگاه‌ها. */
+  size?: 'default' | 'wide';
 }
 
 export function Modal({
@@ -23,8 +25,12 @@ export function Modal({
   title,
   children,
   closeOnBackdrop = false,
+  size = 'default',
 }: ModalProps) {
   const ref = useRef<HTMLDialogElement>(null);
+  // شناسهٔ یکتا لازم است: اگر دو مدال همزمان در درخت باشند، شناسهٔ ثابت
+  // تکراری می‌شود و aria-labelledby به عنوان اشتباه اشاره می‌کند.
+  const titleId = useId();
 
   useEffect(() => {
     const dialog = ref.current;
@@ -55,20 +61,23 @@ export function Modal({
   return (
     <dialog
       ref={ref}
-      aria-labelledby="modal-title"
+      aria-labelledby={titleId}
       onClick={(event) => {
         // کلیک روی خودِ dialog یعنی پس‌زمینه؛ کلیک روی محتوا به اینجا
         // نمی‌رسد چون داخل یک عنصر فرزند است.
         if (closeOnBackdrop && event.target === ref.current) onClose();
       }}
       className={[
-        'w-[min(32rem,calc(100vw-2rem))] rounded-lg border border-border',
+        size === 'wide'
+          ? 'w-[min(46rem,calc(100vw-2rem))]'
+          : 'w-[min(32rem,calc(100vw-2rem))]',
+        'rounded-lg border border-border',
         'bg-surface p-0 text-text shadow-xl backdrop:bg-black/40',
         'open:animate-in',
       ].join(' ')}
     >
       <div className="flex items-center justify-between border-b border-border px-5 py-3.5">
-        <h2 id="modal-title" className="font-semibold">
+        <h2 id={titleId} className="font-semibold">
           {title}
         </h2>
         <button

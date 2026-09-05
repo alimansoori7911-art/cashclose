@@ -74,11 +74,18 @@ export function useRegisterDetail(id: string | undefined) {
   });
 }
 
+export interface CreateRegisterBody {
+  businessDate: string;
+  /** صندوق دوروزه؛ `coversUntilDate` فقط با این پرچم معنا دارد. */
+  isTwoDay?: boolean;
+  coversUntilDate?: string;
+}
+
 export function useCreateRegister() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (body: { businessDate: string }) =>
+    mutationFn: (body: CreateRegisterBody) =>
       api.post<RegisterSummary>('/cash-registers', body),
     onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: ['cash-register'] }),

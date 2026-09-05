@@ -1,4 +1,8 @@
-import { ForbiddenException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+} from '@nestjs/common';
 import { UserRole } from '@prisma/client';
 
 import { PrismaService } from '../../../common/prisma/prisma.service';
@@ -28,6 +32,7 @@ export class RegisterDraftService {
    */
   async saveDraft(actor: RequestUser, id: string, dto: SaveDraftDto) {
     const register = await this.loadEditable(actor, id);
+    await this.assertTerminalsBelongToBranch(register.branchId, dto);
 
     await this.prisma.$transaction(async (tx) => {
       // ردیف‌هایی که شناسه دارند به‌روزرسانی می‌شوند و بقیه حذف؛ حذف و
@@ -100,10 +105,49 @@ export class RegisterDraftService {
    * فقط صندوقدارِ صاحب صندوق می‌تواند ویرایش کند — مدیر و حسابدار
    * حتی اگر دسترسی خواندن دارند، حق تغییر ندارند (بخش ۳ سند).
    */
+  /**
+   * کارتخوان باید متعلق به شعبهٔ همین صندوق باشد.
+   *
+   * بدون این بررسی، شناسهٔ دستگاهِ شعبه یا مستأجر دیگر مستقیم در ردیف
+   * ذخیره می‌شد و گزارش «کدام دستگاه چقدر فروخته» را مسموم می‌کرد —
+   * اعتبارسنجی DTO فقط قالب UUID را می‌دید، نه مالکیت را.
+   */
+  private async assertTerminalsBelongToBranch(
+    branchId: string,
+    dto: SaveDraftDto,
+  ): Promise<void> {
+    const ids = [
+      ...new Set(
+        dto.transactions
+          .map((t) => t.terminalId)
+          .filter((value): value is string => Boolean(value)),
+      ),
+    ];
+
+    if (ids.length === 0) return;
+
+    const found = await this.prisma.posTerminal.findMany({
+      where: { id: { in: ids }, branchId },
+      select: { id: true },
+    });
+
+    if (found.length !== ids.length) {
+      throw new BadRequestException(
+        'کارتخوان انتخاب‌شده متعلق به شعبهٔ این صندوق نیست.',
+      );
+    }
+  }
+
   private async loadEditable(actor: RequestUser, id: string) {
     const register = await this.prisma.cashRegister.findFirst({
       where: { id, tenantId: actor.tenantId },
-      select: { id: true, tenantId: true, cashierId: true, status: true },
+      select: {
+        id: true,
+        tenantId: true,
+        branchId: true,
+        cashierId: true,
+        status: true,
+      },
     });
 
     if (!register) {

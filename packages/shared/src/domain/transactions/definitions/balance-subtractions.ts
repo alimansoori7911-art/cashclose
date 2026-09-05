@@ -22,6 +22,7 @@ export const BALANCE_SUBTRACTIONS: readonly TransactionTypeDefinition[] = [
     hasDescription: true,
     hasImages: false,
     isMultiRow: true,
+    needsTerminal: false,
     hint: 'مشتری جنسی آورده و فروخته و با مابه‌التفاوت آن جنس دیگری خریده است؛ شمارهٔ فاکتور در توضیح.',
   },
   {
@@ -31,6 +32,7 @@ export const BALANCE_SUBTRACTIONS: readonly TransactionTypeDefinition[] = [
     hasDescription: true,
     hasImages: true,
     isMultiRow: true,
+    needsTerminal: false,
     hint: 'مشتری وجه را در شعبهٔ دیگری پرداخت کرده و اکنون نیازی به پرداخت مجدد نیست.',
   },
   {
@@ -40,6 +42,7 @@ export const BALANCE_SUBTRACTIONS: readonly TransactionTypeDefinition[] = [
     hasDescription: true,
     hasImages: true,
     isMultiRow: true,
+    needsTerminal: false,
     hint: 'پرداخت هزینه بابت انجام سرویسی که وجه آن از مشتری دریافت شده است.',
   },
   {
@@ -49,6 +52,7 @@ export const BALANCE_SUBTRACTIONS: readonly TransactionTypeDefinition[] = [
     hasDescription: false,
     hasImages: true,
     isMultiRow: false,
+    needsTerminal: false,
     hint: 'مبلغ برگشت کالا ثبت‌شده در سیستم حسابداری.',
   },
   {
@@ -58,6 +62,7 @@ export const BALANCE_SUBTRACTIONS: readonly TransactionTypeDefinition[] = [
     hasDescription: true,
     hasImages: false,
     isMultiRow: true,
+    needsTerminal: false,
     hint: 'قرینهٔ مازاد صندوقِ روز قبل، یا هر دلیل موجه دیگر با تأیید کارفرما.',
   },
   {
@@ -67,6 +72,7 @@ export const BALANCE_SUBTRACTIONS: readonly TransactionTypeDefinition[] = [
     hasDescription: true,
     hasImages: false,
     isMultiRow: true,
+    needsTerminal: false,
     hint: 'مشتری خرید کرده ولی قرار است وجه آن را بعداً واریز کند.',
   },
   {
@@ -76,6 +82,7 @@ export const BALANCE_SUBTRACTIONS: readonly TransactionTypeDefinition[] = [
     hasDescription: true,
     hasImages: false,
     isMultiRow: true,
+    needsTerminal: false,
     hint: 'بخشی از وجه که پیش‌تر به‌عنوان بیعانه دریافت شده و امروز از مبلغ کل کسر می‌شود.',
   },
   {
@@ -85,6 +92,7 @@ export const BALANCE_SUBTRACTIONS: readonly TransactionTypeDefinition[] = [
     hasDescription: true,
     hasImages: false,
     isMultiRow: true,
+    needsTerminal: false,
     hint: 'تخفیف خارج از سیستم حسابداری که امکان ثبت آن در نرم‌افزار حسابداری وجود نداشته است.',
   },
 ] as const;
