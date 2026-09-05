@@ -35,7 +35,11 @@ services:
         # مهاجرت اول شکست می‌خورد.
         condition: service_healthy
     environment:
-      NODE_ENV: production
+      # پیش‌فرض production است؛ ولی قابل بازنویسی از `.env` می‌ماند تا
+      # استقرار اولیه روی IP و HTTP (پیش از راه‌اندازی دامنه و گواهی)
+      # ممکن باشد. پس از فعال‌شدن HTTPS، خط `NODE_ENV` را از `.env`
+      # بردارید تا محافظ‌های محیط تولید دوباره فعال شوند.
+      NODE_ENV: ${NODE_ENV:-production}
       PORT: 3000
       DATABASE_URL: postgresql://${POSTGRES_USER:-cashclose}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-cashclose}?schema=public
       JWT_SECRET: ${JWT_SECRET:?کلید JWT تنظیم نشده است}
