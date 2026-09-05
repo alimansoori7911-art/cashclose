@@ -16,6 +16,8 @@
     "format": "prettier --write .",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
+    "check:size": "node scripts/check-file-size.mjs",
+    "verify": "npm run typecheck && npm test && npm run lint && npm run check:size",
     "db:migrate": "npm run db:migrate --workspace @cashclose/api",
     "db:seed": "npm run db:seed --workspace @cashclose/api",
     "db:studio": "npm run db:studio --workspace @cashclose/api"

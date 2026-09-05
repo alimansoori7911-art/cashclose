@@ -154,6 +154,22 @@ cashclosemain/
 | `npm run db:studio` | مرورگر گرافیکی دیتابیس |
 | `npm run db:reset-registers --workspace @cashclose/api` | پاک‌کردن صندوق‌های آزمایشی |
 | `npm run db:demo-history --workspace @cashclose/api` | ساخت تاریخچهٔ نمونه برای گزارش‌ها |
+| `npm run check:size` | بررسی سقف ۱۵۰ خط هر فایل |
+| `npm run verify` | هر چهار بررسی پیش از کامیت، پشت سر هم |
+
+---
+
+## استقرار روی سرور
+
+با داکر، کل سامانه با یک دستور بالا می‌آید:
+
+```bash
+cp .env.docker.example .env   # مقادیر را پر کنید
+docker compose up -d --build
+```
+
+راهنمای کامل — از نصب داکر تا پشتیبان‌گیری خودکار — در
+[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 
 ---
 
@@ -163,6 +179,7 @@ cashclosemain/
 |---|---|
 | [CLAUDE.md](CLAUDE.md) | قواعد کدنویسی پروژه |
 | [DECISIONS.md](DECISIONS.md) | تصمیم‌های معماری و دلیلشان |
+| [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | **استقرار روی سرور، قدم‌به‌قدم** |
 | [docs/OPERATIONS.md](docs/OPERATIONS.md) | پایش، لاگ، پیگیری خطا و پیکربندی تولید |
 | [tests/README.md](tests/README.md) | اجرای تست‌های انتها‌به‌انتها |
 
@@ -196,4 +213,8 @@ cashclosemain/
       اعتبارسنجی سخت‌گیرانهٔ CORS در تولید، درج گروهی ردیف‌ها در
       ذخیرهٔ خودکار
       <br>🔒 نشت چندمستأجری کارتخوان بسته شد (تعلق دستگاه به شعبه)
-- [ ] فاز ۸ — Docker + CI/CD + مستندسازی
+- [x] **فاز ۸ — Docker + CI/CD + مستندسازی**: تصویرهای چندمرحله‌ای بک‌اند و
+      فرانت‌اند، `docker compose` برای استقرار یک‌دستوری، گردش‌کار CI
+      (تایپ، لینت، تست واحد، تست انتها‌به‌انتها با دیتابیس واقعی، بیلد
+      تصویرها)، بررسی خودکار سقف ۱۵۰ خط، راهنمای استقرار فارسی
+      <br>⚡ تقسیم بستهٔ فرانت‌اند: هستهٔ برنامه از ۸۰۹ به ۳۷۹ کیلوبایت

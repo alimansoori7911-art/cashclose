@@ -38,6 +38,7 @@ export default tseslint.config(
         Buffer: 'readonly',
         FormData: 'readonly',
         Blob: 'readonly',
+        URL: 'readonly',
       },
     },
     rules: {

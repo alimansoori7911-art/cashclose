@@ -1,0 +1,154 @@
+name: CI
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+  # امکان اجرای دستی از تب Actions.
+  workflow_dispatch:
+
+# اجرای قبلی همان شاخه لغو می‌شود؛ فقط آخرین کامیت اهمیت دارد.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ─── بررسی کیفیت کد ───
+  quality:
+    name: تایپ، لینت و تست واحد
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: نصب وابستگی‌ها
+        run: npm ci
+
+      # کلاینت Prisma پیش از هر بررسی نوعی لازم است.
+      - name: ساخت کلاینت Prisma
+        run: npm run db:generate --workspace @cashclose/api
+
+      - name: بیلد بستهٔ مشترک
+        run: npm run build --workspace @cashclose/shared
+
+      - name: بررسی نوع‌ها
+        run: npm run typecheck
+
+      - name: بررسی سبک کد
+        run: npm run lint
+
+      - name: تست‌های واحد
+        run: npm test
+
+      # قاعدهٔ CLAUDE.md: هیچ فایل غیرتستی نباید از ۱۵۰ خط بگذرد.
+      - name: بررسی سقف اندازهٔ فایل
+        run: node scripts/check-file-size.mjs
+
+  # ─── تست انتها‌به‌انتها با دیتابیس واقعی ───
+  e2e:
+    name: تست انتها‌به‌انتها
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: cashclose
+          POSTGRES_PASSWORD: cashclose
+          POSTGRES_DB: cashclose_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    env:
+      DATABASE_URL: postgresql://cashclose:cashclose@localhost:5432/cashclose_test?schema=public
+      JWT_SECRET: ci_only_secret_not_used_anywhere_else_0123456789
+      CORS_ORIGINS: http://localhost:5173
+      NODE_ENV: test
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: نصب وابستگی‌ها
+        run: npm ci
+
+      - name: آماده‌سازی دیتابیس
+        run: |
+          npm run db:generate --workspace @cashclose/api
+          npx prisma migrate deploy --schema apps/api/prisma/schema.prisma
+          npm run db:seed --workspace @cashclose/api
+
+      - name: بیلد
+        run: |
+          npm run build --workspace @cashclose/shared
+          npm run build --workspace @cashclose/api
+
+      - name: اجرای سرویس در پس‌زمینه
+        run: |
+          node apps/api/dist/src/main.js &
+          # انتظار تا سرویس واقعاً پاسخ دهد؛ خواب ثابت شکننده است.
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:3000/api/v1/health/ready >/dev/null; then
+              echo "سرویس آماده شد"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "سرویس بالا نیامد"
+          exit 1
+
+      # هر تست جداگانه اجرا می‌شود: مسیر ورود سقف ۱۰ درخواست در دقیقه
+      # دارد و اجرای پشت‌سرهم باعث ۴۲۹ می‌شود.
+      - name: تست رگرسیون
+        run: node tests/regression.mjs
+
+      - name: تست صندوق دوروزه و کارتخوان
+        run: sleep 65 && node tests/two-day-and-terminals.mjs
+
+      - name: تست موارد لبه‌ای
+        run: sleep 65 && node tests/edge-cases.mjs
+
+  # ─── ساخت تصویرهای داکر ───
+  docker:
+    name: بیلد تصویرهای داکر
+    runs-on: ubuntu-latest
+    needs: [quality]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: بیلد تصویر بک‌اند
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/api/Dockerfile
+          # فقط بیلد می‌شود تا از سالم‌بودن Dockerfile مطمئن شویم؛
+          # انتشار به رجیستری در گردش‌کار جداگانه انجام می‌شود.
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: بیلد تصویر فرانت‌اند
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/web/Dockerfile
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

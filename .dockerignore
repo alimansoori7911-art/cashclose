@@ -1,0 +1,42 @@
+# هرچه اینجا باشد به داکر فرستاده نمی‌شود.
+#
+# مهم‌ترینش node_modules است: صدها مگابایت که هم بیلد را کند می‌کند و
+# هم اگر کپی شود، وابستگی‌های ویندوز وارد تصویر لینوکسی می‌شوند.
+
+node_modules
+**/node_modules
+dist
+**/dist
+build
+**/build
+*.tsbuildinfo
+
+# راز — هرگز نباید داخل تصویر برود.
+.env
+.env.*
+!.env.example
+!.env.docker.example
+
+# فایل‌های کاربران؛ در volume نگه داشته می‌شوند نه در تصویر.
+uploads
+apps/api/uploads
+
+.git
+.github
+.vscode
+.idea
+coverage
+*.log
+
+# مستندات و فایل‌های اصلی سند که به اجرا ربطی ندارند.
+*.md
+!README.md
+docs
+tests
+*.docx
+*.pdf
+*.xlsm
+
+# ابزار توسعهٔ محلی
+scripts/pg-portable.ps1
+.claude

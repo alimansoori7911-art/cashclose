@@ -1,0 +1,68 @@
+# استقرار کامل سامانه با یک دستور:
+#   docker compose up -d
+#
+# پیش از اجرا، فایل `.env` را کنار همین فایل بسازید (از .env.docker.example).
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-cashclose}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?رمز دیتابیس تنظیم نشده است}
+      POSTGRES_DB: ${POSTGRES_DB:-cashclose}
+      # داده‌ها با ترتیب و رمزگذاری درست برای فارسی ساخته شوند.
+      POSTGRES_INITDB_ARGS: '--encoding=UTF8'
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    # پورت دیتابیس عمداً بیرون داده نمی‌شود: فقط سرویس‌های داخل همین
+    # شبکه به آن دسترسی دارند. برای اتصال از بیرون از تونل SSH استفاده
+    # کنید، نه بازکردن پورت.
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-cashclose}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      db:
+        # تا دیتابیس واقعاً آماده نشده، API بالا نمی‌آید — وگرنه
+        # مهاجرت اول شکست می‌خورد.
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: postgresql://${POSTGRES_USER:-cashclose}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-cashclose}?schema=public
+      JWT_SECRET: ${JWT_SECRET:?کلید JWT تنظیم نشده است}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-12h}
+      CORS_ORIGINS: ${CORS_ORIGINS:?مبدأهای مجاز تنظیم نشده‌اند}
+      STORAGE_LOCAL_PATH: /app/uploads
+    volumes:
+      # عکس‌های رسید بیرون از کانتینر می‌مانند تا با هر استقرار جدید
+      # از بین نروند.
+      - uploads:/app/uploads
+    # مهاجرت‌ها پیش از هر استقرار اجرا می‌شوند؛ `deploy` برخلاف `dev`
+    # هرگز دیتابیس را بازنمی‌سازد و فقط مهاجرت‌های تازه را اعمال می‌کند.
+    # مسیر اسکیما صریح داده می‌شود چون پوشهٔ کاری تصویر `apps/api` است.
+    command: >
+      sh -c "npx prisma migrate deploy --schema ./prisma/schema.prisma
+      && node dist/src/main.js"
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - '${WEB_PORT:-80}:80'
+
+volumes:
+  db-data:
+  uploads:
