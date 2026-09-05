@@ -14,9 +14,13 @@ build/
 !.env.example
 !.env.docker.example
 
-# فایل‌های آپلودشدهٔ کاربران
-uploads/
-apps/api/uploads/
+# فایل‌های آپلودشدهٔ کاربران.
+#
+# مسیر با `/` شروع می‌شود تا فقط پوشهٔ ریشه را بگیرد. الگوی بدون مسیر
+# (`uploads/`) هر پوشه‌ای به این نام را در هر عمقی نادیده می‌گرفت و
+# ماژول `src/modules/uploads/` را هم بلعیده بود.
+/uploads/
+/apps/api/uploads/
 
 # لاگ
 *.log
