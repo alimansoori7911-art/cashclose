@@ -52,6 +52,18 @@ const TOMORROW = isoDay(1);
 
 const cashier = await login('cashier2');
 
+// صندوق باز از اجرای قبلی مانع ساخت صندوق تازه است (قاعدهٔ «یک صندوق
+// باز در هر زمان»). تست باید مستقل از ترتیب اجرا کار کند، پس وضعیت
+// فعلی خوانده و در ادامه لحاظ می‌شود.
+const existing = await call('GET', '/cash-registers/current', cashier);
+const hasOpenRegister = Boolean(existing.body?.id);
+
+if (hasOpenRegister) {
+  console.log(
+    `ℹ صندوق باز از قبل وجود دارد (${existing.body.status}); بخش ساخت رد می‌شود.\n`,
+  );
+}
+
 // ─── قواعد تاریخ صندوق دوروزه ───
 
 const future = await call('POST', '/cash-registers', cashier, {
@@ -99,19 +111,27 @@ check(
 
 // ─── ساخت صندوق دوروزهٔ معتبر ───
 
-const created = await call('POST', '/cash-registers', cashier, {
-  businessDate: YESTERDAY,
-  isTwoDay: true,
-  coversUntilDate: TODAY,
-});
-check('ساخت صندوق دوروزه', created.status === 201, created.body?.message);
+let registerId;
 
-const registerId = created.body?.id;
-check(
-  'تاریخ پوشش ذخیره شده است',
-  created.body?.coversUntilDate?.slice(0, 10) === TODAY,
-  `${created.body?.businessDate?.slice(0, 10)} تا ${created.body?.coversUntilDate?.slice(0, 10)}`,
-);
+if (hasOpenRegister) {
+  // صندوق موجود برای بخش کارتخوان به کار می‌رود؛ قواعد تاریخ بالا
+  // مستقل از این حالت آزموده شدند.
+  registerId = existing.body.id;
+} else {
+  const created = await call('POST', '/cash-registers', cashier, {
+    businessDate: YESTERDAY,
+    isTwoDay: true,
+    coversUntilDate: TODAY,
+  });
+  check('ساخت صندوق دوروزه', created.status === 201, created.body?.message);
+
+  registerId = created.body?.id;
+  check(
+    'تاریخ پوشش ذخیره شده است',
+    created.body?.coversUntilDate?.slice(0, 10) === TODAY,
+    `${created.body?.businessDate?.slice(0, 10)} تا ${created.body?.coversUntilDate?.slice(0, 10)}`,
+  );
+}
 
 // ─── تفکیک کارتخوان ───
 

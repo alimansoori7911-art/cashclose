@@ -23,7 +23,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
 
       - name: نصب وابستگی‌ها
@@ -80,7 +80,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
 
       - name: نصب وابستگی‌ها
@@ -97,30 +97,38 @@ jobs:
           npm run build --workspace @cashclose/shared
           npm run build --workspace @cashclose/api
 
-      - name: اجرای سرویس در پس‌زمینه
+      # سرویس و تست‌ها باید در **یک مرحله** باشند: هر مرحله در GitHub
+      # Actions شل جداگانه دارد و پروسهٔ پس‌زمینه بین مراحل زنده نمی‌ماند.
+      - name: اجرای سرویس و تست‌های انتها‌به‌انتها
         run: |
+          set -e
           node apps/api/dist/src/main.js &
+          API_PID=$!
+          # هر جور که این مرحله تمام شود، سرویس بسته می‌شود.
+          trap 'kill $API_PID 2>/dev/null || true' EXIT
+
           # انتظار تا سرویس واقعاً پاسخ دهد؛ خواب ثابت شکننده است.
-          for i in $(seq 1 30); do
+          ready=0
+          for _ in $(seq 1 30); do
             if curl -sf http://localhost:3000/api/v1/health/ready >/dev/null; then
-              echo "سرویس آماده شد"
-              exit 0
+              ready=1
+              break
             fi
             sleep 2
           done
-          echo "سرویس بالا نیامد"
-          exit 1
+          if [ "$ready" -ne 1 ]; then
+            echo "::error::سرویس بالا نیامد"
+            exit 1
+          fi
+          echo "سرویس آماده شد"
 
-      # هر تست جداگانه اجرا می‌شود: مسیر ورود سقف ۱۰ درخواست در دقیقه
-      # دارد و اجرای پشت‌سرهم باعث ۴۲۹ می‌شود.
-      - name: تست رگرسیون
-        run: node tests/regression.mjs
-
-      - name: تست صندوق دوروزه و کارتخوان
-        run: sleep 65 && node tests/two-day-and-terminals.mjs
-
-      - name: تست موارد لبه‌ای
-        run: sleep 65 && node tests/edge-cases.mjs
+          # بین تست‌ها فاصله لازم است: مسیر ورود سقف ۱۰ درخواست در دقیقه
+          # دارد و اجرای پشت‌سرهم باعث ۴۲۹ می‌شود.
+          node tests/regression.mjs
+          sleep 65
+          node tests/two-day-and-terminals.mjs
+          sleep 65
+          node tests/edge-cases.mjs
 
   # ─── ساخت تصویرهای داکر ───
   docker:
