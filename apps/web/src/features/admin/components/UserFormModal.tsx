@@ -67,7 +67,7 @@ export function UserFormModal({ open, onClose, branches }: Props) {
       reset();
       onClose();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'ثبت ناموفق بود.');
+      setError(err instanceof ApiError ? err.displayMessage : 'ثبت ناموفق بود.');
     }
   }
 

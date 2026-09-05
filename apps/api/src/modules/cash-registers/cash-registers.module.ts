@@ -6,6 +6,7 @@ import { RegisterCloseService } from './services/register-close.service';
 import { RegisterCreationService } from './services/register-creation.service';
 import { RegisterDraftService } from './services/register-draft.service';
 import { RegisterQueryService } from './services/register-query.service';
+import { TerminalGuardService } from './services/terminal-guard.service';
 
 @Module({
   controllers: [CashRegistersController],
@@ -15,6 +16,7 @@ import { RegisterQueryService } from './services/register-query.service';
     RegisterDraftService,
     RegisterCloseService,
     RegisterCalculationService,
+    TerminalGuardService,
   ],
   exports: [RegisterQueryService, RegisterCalculationService],
 })

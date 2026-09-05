@@ -46,9 +46,23 @@ export class ApiError extends Error {
     message: string,
     readonly status: number,
     readonly code?: string,
+    /** شناسهٔ درخواست در لاگ سرور — برای پیگیری خطاهای سمت سرور. */
+    readonly requestId?: string,
   ) {
     super(message);
     this.name = 'ApiError';
+  }
+
+  /**
+   * پیام همراه شناسهٔ پیگیری.
+   *
+   * فقط برای خطاهای سمت سرور: خطای اعتبارسنجی را کاربر خودش رفع می‌کند
+   * و کد پیگیری آنجا فقط پیام را شلوغ می‌کند.
+   */
+  get displayMessage(): string {
+    if (this.status < 500 || !this.requestId) return this.message;
+
+    return `${this.message} (کد پیگیری: ${this.requestId.slice(0, 8)})`;
   }
 }
 
@@ -68,7 +82,7 @@ export function toApiError(error: unknown): ApiError {
 
     const { status, data } = error.response;
     const payload = data as
-      | { message?: string | string[]; error?: string }
+      | { message?: string | string[]; error?: string; requestId?: string }
       | undefined;
 
     const raw = payload?.message;
@@ -78,6 +92,7 @@ export function toApiError(error: unknown): ApiError {
       message ?? FALLBACK_MESSAGES[status] ?? 'خطای ناشناخته.',
       status,
       payload?.error,
+      payload?.requestId,
     );
   }
 

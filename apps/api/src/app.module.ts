@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, type NestModule } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
@@ -6,6 +6,8 @@ import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
 import { BigIntInterceptor } from './common/interceptors/bigint.interceptor';
+import { LoggingInterceptor } from './common/logging/logging.interceptor';
+import { RequestContextMiddleware } from './common/logging/request-context.middleware';
 import { AuditLogsModule } from './modules/audit-logs/audit-logs.module';
 import { AuditModule } from './modules/audit/audit.module';
 import { AuthModule } from './modules/auth/auth.module';
@@ -66,8 +68,17 @@ import { validateEnv } from './config/env.validation';
     { provide: APP_GUARD, useClass: ThrottlerGuard },
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_GUARD, useClass: RolesGuard },
+    // ترتیب Interceptorها: لاگ بیرونی‌ترین لایه است تا زمان واقعی کل
+    // پردازش را ببیند، نه فقط بخشی از آن.
+    { provide: APP_INTERCEPTOR, useClass: LoggingInterceptor },
     // مبالغ BigInt پیش از سریال‌سازی JSON تبدیل می‌شوند.
     { provide: APP_INTERCEPTOR, useClass: BigIntInterceptor },
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer): void {
+    // روی همهٔ مسیرها، پیش از Guardها: درخواستی که در احراز هویت رد
+    // می‌شود هم باید شناسهٔ قابل ردیابی داشته باشد.
+    consumer.apply(RequestContextMiddleware).forRoutes('*');
+  }
+}

@@ -1,8 +1,4 @@
-import {
-  BadRequestException,
-  ForbiddenException,
-  Injectable,
-} from '@nestjs/common';
+import { ForbiddenException, Injectable } from '@nestjs/common';
 import { UserRole } from '@prisma/client';
 
 import { PrismaService } from '../../../common/prisma/prisma.service';
@@ -10,6 +6,7 @@ import type { RequestUser } from '../../../common/tenant/request-user';
 import { assertEditable } from '../cash-register.rules';
 import type { SaveDraftDto } from '../dto/save-draft.dto';
 import { RegisterCalculationService } from './register-calculation.service';
+import { TerminalGuardService } from './terminal-guard.service';
 
 /** ذخیرهٔ پیش‌نویس صندوق. */
 @Injectable()
@@ -17,6 +14,7 @@ export class RegisterDraftService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly calculation: RegisterCalculationService,
+    private readonly terminals: TerminalGuardService,
   ) {}
 
   /**
@@ -32,7 +30,7 @@ export class RegisterDraftService {
    */
   async saveDraft(actor: RequestUser, id: string, dto: SaveDraftDto) {
     const register = await this.loadEditable(actor, id);
-    await this.assertTerminalsBelongToBranch(register.branchId, dto);
+    await this.terminals.assertBelongsToBranch(register.branchId, dto);
 
     await this.prisma.$transaction(async (tx) => {
       // ردیف‌هایی که شناسه دارند به‌روزرسانی می‌شوند و بقیه حذف؛ حذف و
@@ -45,27 +43,40 @@ export class RegisterDraftService {
         where: { cashRegisterId: id, id: { notIn: keepIds } },
       });
 
-      for (const [index, item] of dto.transactions.entries()) {
-        const data = {
+      const rows = dto.transactions.map((item, index) => ({
+        item,
+        data: {
           type: item.type,
           amount: BigInt(item.amount),
           description: item.description ?? null,
           terminalId: item.terminalId ?? null,
           sortOrder: item.sortOrder ?? index,
-        };
+        },
+      }));
 
-        if (item.id) {
-          // `updateMany` با قید صندوق: شناسهٔ تراکنشِ صندوق دیگری قابل
-          // تغییر نیست، حتی اگر حدس زده شود.
-          await tx.transaction.updateMany({
-            where: { id: item.id, cashRegisterId: id },
-            data,
-          });
-        } else {
-          await tx.transaction.create({
-            data: { ...data, tenantId: register.tenantId, cashRegisterId: id },
-          });
-        }
+      // ردیف‌های تازه یکجا درج می‌شوند: فرم ۲۲ قلمی در هر ذخیرهٔ خودکار
+      // ۲۲ رفت‌وبرگشت جدا می‌ساخت.
+      const created = rows.filter(({ item }) => !item.id);
+      if (created.length > 0) {
+        await tx.transaction.createMany({
+          data: created.map(({ data }) => ({
+            ...data,
+            tenantId: register.tenantId,
+            cashRegisterId: id,
+          })),
+        });
+      }
+
+      // به‌روزرسانی‌ها ناگزیر جداگانه‌اند، چون هر ردیف مقدار متفاوتی
+      // دارد. `updateMany` با قید صندوق: شناسهٔ تراکنشِ صندوق دیگری
+      // قابل تغییر نیست، حتی اگر حدس زده شود.
+      for (const { item, data } of rows) {
+        if (!item.id) continue;
+
+        await tx.transaction.updateMany({
+          where: { id: item.id, cashRegisterId: id },
+          data,
+        });
       }
 
       if (dto.finalNotes !== undefined) {
@@ -105,39 +116,6 @@ export class RegisterDraftService {
    * فقط صندوقدارِ صاحب صندوق می‌تواند ویرایش کند — مدیر و حسابدار
    * حتی اگر دسترسی خواندن دارند، حق تغییر ندارند (بخش ۳ سند).
    */
-  /**
-   * کارتخوان باید متعلق به شعبهٔ همین صندوق باشد.
-   *
-   * بدون این بررسی، شناسهٔ دستگاهِ شعبه یا مستأجر دیگر مستقیم در ردیف
-   * ذخیره می‌شد و گزارش «کدام دستگاه چقدر فروخته» را مسموم می‌کرد —
-   * اعتبارسنجی DTO فقط قالب UUID را می‌دید، نه مالکیت را.
-   */
-  private async assertTerminalsBelongToBranch(
-    branchId: string,
-    dto: SaveDraftDto,
-  ): Promise<void> {
-    const ids = [
-      ...new Set(
-        dto.transactions
-          .map((t) => t.terminalId)
-          .filter((value): value is string => Boolean(value)),
-      ),
-    ];
-
-    if (ids.length === 0) return;
-
-    const found = await this.prisma.posTerminal.findMany({
-      where: { id: { in: ids }, branchId },
-      select: { id: true },
-    });
-
-    if (found.length !== ids.length) {
-      throw new BadRequestException(
-        'کارتخوان انتخاب‌شده متعلق به شعبهٔ این صندوق نیست.',
-      );
-    }
-  }
-
   private async loadEditable(actor: RequestUser, id: string) {
     const register = await this.prisma.cashRegister.findFirst({
       where: { id, tenantId: actor.tenantId },

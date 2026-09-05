@@ -83,7 +83,7 @@ export function useImageUpload(transactionId: string | null, max: number) {
         await queryClient.invalidateQueries({ queryKey: ['cash-register'] });
       } catch (err) {
         setError(
-          err instanceof ApiError ? err.message : 'حذف تصویر ناموفق بود.',
+          err instanceof ApiError ? err.displayMessage : 'حذف تصویر ناموفق بود.',
         );
       }
     },

@@ -52,6 +52,38 @@ const envSchema = z.object({
   LOGIN_LOCKOUT_MINUTES: z.coerce.number().int().positive().default(15),
 });
 
+/**
+ * قواعدی که فقط در محیط تولید سخت‌گیرانه‌اند.
+ *
+ * جدا از schema نگه داشته شد چون شرطی‌اند: همان مقداری که در توسعه
+ * درست است (localhost، HTTP) در تولید یک ایراد امنیتی است.
+ */
+function assertProductionSafety(env: Env): void {
+  if (env.NODE_ENV !== 'production') return;
+
+  const problems: string[] = [];
+  const origins = env.CORS_ORIGINS.split(',').map((o) => o.trim());
+
+  if (origins.includes('*')) {
+    problems.push(
+      'CORS_ORIGINS نمی‌تواند در تولید «*» باشد؛ دامنه‌ها را صریح بنویسید.',
+    );
+  }
+
+  if (origins.some((origin) => origin.startsWith('http://'))) {
+    // توکن روی HTTP رمزنگاری‌نشده منتقل می‌شود.
+    problems.push('همهٔ مقادیر CORS_ORIGINS در تولید باید https باشند.');
+  }
+
+  if (problems.length > 0) {
+    throw new Error(
+      `پیکربندی برای محیط تولید امن نیست:\n${problems
+        .map((p) => `  • ${p}`)
+        .join('\n')}`,
+    );
+  }
+}
+
 export type Env = z.infer<typeof envSchema>;
 
 export function validateEnv(raw: Record<string, unknown>): Env {
@@ -68,5 +100,6 @@ export function validateEnv(raw: Record<string, unknown>): Env {
     );
   }
 
+  assertProductionSafety(parsed.data);
   return parsed.data;
 }

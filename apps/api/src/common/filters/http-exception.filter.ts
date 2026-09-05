@@ -9,6 +9,7 @@ import {
 import { Prisma } from '@prisma/client';
 import type { Request, Response } from 'express';
 
+import { requestContext } from '../logging/request-context';
 import { ERROR_CODES, ERROR_MESSAGES } from './error-codes';
 
 /**
@@ -29,10 +30,11 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const request = context.getRequest<Request>();
 
     const { status, message, code } = this.resolve(exception);
+    const requestId = requestContext.id();
 
     if (status >= HttpStatus.INTERNAL_SERVER_ERROR) {
       this.logger.error(
-        `${request.method} ${request.url} → ${status}`,
+        `[${requestId}] ${request.method} ${request.url} → ${status}`,
         exception instanceof Error ? exception.stack : String(exception),
       );
     }
@@ -42,6 +44,9 @@ export class HttpExceptionFilter implements ExceptionFilter {
       message,
       statusCode: status,
       path: request.url,
+      // شناسه در پاسخ می‌آید تا کاربر هنگام گزارش خطا آن را بدهد و
+      // همان درخواست در لاگ سرور پیدا شود.
+      requestId,
       timestamp: new Date().toISOString(),
     });
   }

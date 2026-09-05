@@ -13,6 +13,15 @@ async function bootstrap() {
 
   app.use(helmet());
 
+  /**
+   * خاموشی تمیز.
+   *
+   * بدون این، `docker stop` یا ری‌استارت، درخواست‌های در جریان را وسط
+   * کار قطع می‌کند — و برای سامانه‌ای که تراکنش مالی ذخیره می‌کند یعنی
+   * احتمال نیمه‌کاره ماندن نوشتن. Prisma هم اتصالش را می‌بندد.
+   */
+  app.enableShutdownHooks();
+
   // قالب یکسان و فارسی برای همهٔ خطاها.
   app.useGlobalFilters(new HttpExceptionFilter());
 

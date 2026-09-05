@@ -62,7 +62,7 @@ export function CashRegisterPage() {
       draft.setNotice(result.message);
     } catch (err) {
       draft.setError(
-        err instanceof ApiError ? err.message : 'بستن صندوق ناموفق بود.',
+        err instanceof ApiError ? err.displayMessage : 'بستن صندوق ناموفق بود.',
       );
     }
   }
@@ -88,7 +88,7 @@ export function CashRegisterPage() {
             } catch (err) {
               setCreateError(
                 err instanceof ApiError
-                  ? err.message
+                  ? err.displayMessage
                   : 'ایجاد صندوق ناموفق بود.',
               );
             }

@@ -35,7 +35,7 @@ export function ReviewActions({ registerId, status, onDone }: Props) {
       await approve.mutateAsync(undefined);
       onDone();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'تأیید ناموفق بود.');
+      setError(err instanceof ApiError ? err.displayMessage : 'تأیید ناموفق بود.');
     }
   }
 
@@ -53,7 +53,7 @@ export function ReviewActions({ registerId, status, onDone }: Props) {
       setRejectOpen(false);
       onDone();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'رد صندوق ناموفق بود.');
+      setError(err instanceof ApiError ? err.displayMessage : 'رد صندوق ناموفق بود.');
     }
   }
 
