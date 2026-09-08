@@ -86,11 +86,14 @@ export function LoginForm({ onSuccess }: { onSuccess?: () => void }) {
       />
 
       {needsTenant && (
+        // در استقرار واقعی هر مشتری زیردامنهٔ خودش را دارد و این فیلد
+        // هرگز ظاهر نمی‌شود. فقط وقتی سامانه از آدرس بدون زیردامنه
+        // (توسعه یا آی‌پی خام) باز شود به آن نیاز می‌افتد.
         <TextInput
           label="شناسهٔ مجموعه"
           value={tenantId}
           onChange={(event) => setTenantId(event.target.value)}
-          hint="این شناسه را مدیر مجموعه در اختیار شما می‌گذارد."
+          hint="سامانه از آدرس اختصاصی مجموعهٔ شما باز نشده است. با پشتیبانی تماس بگیرید."
           required
           autoFocus
           ltr

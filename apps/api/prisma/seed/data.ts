@@ -15,6 +15,8 @@ export const DEMO_PASSWORD = 'Cashclose@1404';
 export const TENANT = {
   id: '7eacf9a9-f84d-408d-9584-f498434e468b',
   name: 'فروشگاه رهاوی',
+  /** زیردامنهٔ اختصاصی: `rahavi.cashclose.ir` */
+  slug: 'rahavi',
 } as const;
 
 export const STORE = {

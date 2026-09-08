@@ -18,6 +18,8 @@ const prisma = new PrismaClient();
 const TENANT = {
   id: 'c3f1b8e2-9d47-4a56-b1e0-7f2a5c8d3e94',
   name: 'فروشگاه دوم (آزمایشی)',
+  /** زیردامنهٔ اختصاصی: `dovom.cashclose.ir` */
+  slug: 'dovom',
 };
 
 const STORE = {
@@ -49,7 +51,7 @@ async function main() {
   await prisma.tenant.upsert({
     where: { id: TENANT.id },
     update: {},
-    create: { id: TENANT.id, name: TENANT.name },
+    create: { id: TENANT.id, name: TENANT.name, slug: TENANT.slug },
   });
 
   await prisma.store.upsert({

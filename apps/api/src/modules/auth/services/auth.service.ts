@@ -15,6 +15,7 @@ import { AuditService } from '../../audit/audit.service';
 import type { LoginDto } from '../dto/login.dto';
 import { LoginLookupService } from './login-lookup.service';
 import { LoginThrottleService } from './login-throttle.service';
+import { TenantResolverService } from './tenant-resolver.service';
 import { PasswordService } from './password.service';
 
 export interface LoginResult {
@@ -36,6 +37,7 @@ export class AuthService implements OnModuleInit {
     private readonly throttle: LoginThrottleService,
     private readonly lookup: LoginLookupService,
     private readonly audit: AuditService,
+    private readonly tenantResolver: TenantResolverService,
   ) {}
 
   async onModuleInit(): Promise<void> {
@@ -52,11 +54,20 @@ export class AuthService implements OnModuleInit {
    *  ۲. وقتی کاربر وجود ندارد هم یک راستی‌آزمایی ساختگی انجام می‌شود تا
    *     اختلاف زمان پاسخ، وجود یا نبود کاربر را لو ندهد.
    */
-  async login(dto: LoginDto, ip?: string): Promise<LoginResult> {
+  async login(
+    dto: LoginDto,
+    ip?: string,
+    host?: string,
+  ): Promise<LoginResult> {
     const throttleKey = `${dto.username}:${ip ?? 'unknown'}`;
     this.throttle.assertNotLocked(throttleKey);
 
-    const user = await this.lookup.findForLogin(dto.username, dto.tenantId);
+    // زیردامنه بر `tenantId` بدنه اولویت دارد: آدرسی که کاربر با آن
+    // آمده، منبع معتبرتری است از چیزی که در درخواست فرستاده شده.
+    const fromHost = await this.tenantResolver.resolveTenantId(host);
+    const tenantId = fromHost ?? dto.tenantId;
+
+    const user = await this.lookup.findForLogin(dto.username, tenantId);
 
     const passwordValid = user
       ? await this.passwords.verify(user.passwordHash, dto.password)

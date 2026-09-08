@@ -1,4 +1,12 @@
-import { Body, Controller, Get, Ip, Post, HttpCode } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Headers,
+  HttpCode,
+  Ip,
+  Post,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 
@@ -27,8 +35,14 @@ export class AuthController {
   // سقف سخت‌گیرانه‌تر از حد عمومی سامانه، مخصوص مسیرهای حساس.
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
   @ApiOperation({ summary: 'ورود کاربر' })
-  login(@Body() dto: LoginDto, @Ip() ip: string) {
-    return this.auth.login(dto, ip);
+  login(
+    @Body() dto: LoginDto,
+    @Ip() ip: string,
+    @Headers('host') host?: string,
+  ) {
+    // میزبان درخواست، مجموعه را مشخص می‌کند؛ کاربر هیچ شناسه‌ای تایپ
+    // نمی‌کند. `tenantId` بدنه فقط برای ابزارها و آزمون‌ها می‌ماند.
+    return this.auth.login(dto, ip, host);
   }
 
   @Get('me')

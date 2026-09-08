@@ -49,6 +49,71 @@ async function login(username, tenantId) {
   return res;
 }
 
+// ─── تشخیص مجموعه از زیردامنه ───
+//
+// `fetch` اجازهٔ تعیین هدر Host را نمی‌دهد (هدر ممنوعه است)، پس درخواست
+// خام HTTP ساخته می‌شود. این همان مسیری است که در استقرار واقعی طی
+// می‌شود: کاربر با آدرس اختصاصی مجموعه‌اش می‌آید.
+async function loginWithHost(host, username = 'owner') {
+  const { default: http } = await import('node:http');
+  const url = new URL(BASE);
+
+  return new Promise((resolve) => {
+    const payload = JSON.stringify({ username, password: 'Cashclose@1404' });
+    const req = http.request(
+      {
+        hostname: url.hostname,
+        port: url.port || 80,
+        path: `${url.pathname}/auth/login`,
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Content-Length': Buffer.byteLength(payload),
+          Host: host,
+        },
+      },
+      (res) => {
+        let data = '';
+        res.on('data', (c) => (data += c));
+        res.on('end', () => {
+          let json = {};
+          try {
+            json = JSON.parse(data);
+          } catch {
+            /* غیر JSON */
+          }
+          resolve({ status: res.statusCode, body: json });
+        });
+      },
+    );
+    req.on('error', () => resolve({ status: 0, body: {} }));
+    req.write(payload);
+    req.end();
+  });
+}
+
+const viaSlugOne = await loginWithHost('rahavi.cashclose.ir');
+check(
+  'زیردامنهٔ مجموعهٔ اول بدون شناسه وارد می‌کند',
+  viaSlugOne.status === 200,
+  viaSlugOne.body?.user?.fullName,
+);
+
+const viaSlugTwo = await loginWithHost('dovom.cashclose.ir');
+check(
+  'زیردامنهٔ مجموعهٔ دوم کاربر دیگری می‌آورد',
+  viaSlugTwo.status === 200 &&
+    viaSlugTwo.body?.user?.id !== viaSlugOne.body?.user?.id,
+  viaSlugTwo.body?.user?.fullName,
+);
+
+const viaUnknown = await loginWithHost('unknown.cashclose.ir');
+check(
+  'زیردامنهٔ ناشناخته وارد نمی‌کند',
+  viaUnknown.status === 401,
+  `وضعیت: ${viaUnknown.status}`,
+);
+
 // ─── ورود مبهم ───
 
 const ambiguous = await login('owner');

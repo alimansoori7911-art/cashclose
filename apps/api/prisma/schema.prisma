@@ -28,6 +28,12 @@ enum TenantStatus {
 model Tenant {
   id        String       @id @default(uuid()) @db.Uuid
   name      String       @db.VarChar(200)
+  /// شناسهٔ متنی مجموعه — زیردامنهٔ اختصاصی هر مشتری.
+  ///
+  /// کاربر هرگز نباید UUID تایپ کند و فهرست‌کردن همهٔ مجموعه‌ها هم
+  /// نام مشتریان را به رقبا لو می‌دهد. زیردامنه هر دو مشکل را حل
+  /// می‌کند: `refah.cashclose.ir` خودش می‌گوید کدام مجموعه است.
+  slug      String       @unique @db.VarChar(63)
   status    TenantStatus @default(active)
   createdAt DateTime     @default(now()) @map("created_at")
   updatedAt DateTime     @updatedAt @map("updated_at")
