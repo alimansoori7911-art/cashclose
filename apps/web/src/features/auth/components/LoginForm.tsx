@@ -17,8 +17,13 @@ export function LoginForm({ onSuccess }: { onSuccess?: () => void }) {
   const { login } = useAuth();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [tenantId, setTenantId] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  // فیلد مجموعه تا وقتی لازم نشده پنهان است: اکثر فروشگاه‌ها یک مجموعه
+  // بیشتر ندارند و نمایش همیشگی‌اش فقط فرم را پیچیده می‌کند.
+  const [needsTenant, setNeedsTenant] = useState(false);
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -36,14 +41,19 @@ export function LoginForm({ onSuccess }: { onSuccess?: () => void }) {
     setLoading(true);
 
     try {
-      await login(username.trim(), password);
+      await login(username.trim(), password, tenantId.trim() || undefined);
       onSuccess?.();
     } catch (err) {
-      setError(
+      const message =
         err instanceof ApiError
           ? err.message
-          : 'ورود ناموفق بود. دوباره تلاش کنید.',
-      );
+          : 'ورود ناموفق بود. دوباره تلاش کنید.';
+
+      // سرور وقتی نام کاربری در چند مجموعه باشد همین را می‌گوید؛ در آن
+      // حالت باید فیلد مجموعه ظاهر شود وگرنه کاربر به بن‌بست می‌خورد.
+      if (message.includes('چند مجموعه')) setNeedsTenant(true);
+
+      setError(message);
     } finally {
       setLoading(false);
     }
@@ -74,6 +84,19 @@ export function LoginForm({ onSuccess }: { onSuccess?: () => void }) {
         ltr
         disabled={loading}
       />
+
+      {needsTenant && (
+        <TextInput
+          label="شناسهٔ مجموعه"
+          value={tenantId}
+          onChange={(event) => setTenantId(event.target.value)}
+          hint="این شناسه را مدیر مجموعه در اختیار شما می‌گذارد."
+          required
+          autoFocus
+          ltr
+          disabled={loading}
+        />
+      )}
 
       <Button type="submit" loading={loading} fullWidth>
         ورود

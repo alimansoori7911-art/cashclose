@@ -57,16 +57,27 @@ interface LoginResponse {
 export function useAuth() {
   const user = useSyncExternalStore(subscribe, getSnapshot);
 
-  const login = useCallback(async (username: string, password: string) => {
-    const result = await api.post<LoginResponse>('/auth/login', {
-      username,
-      password,
-    });
+  /**
+   * ورود.
+   *
+   * `tenantId` فقط وقتی لازم است که نام کاربری در چند مجموعه ثبت شده
+   * باشد؛ سرور در آن حالت ورود را رد می‌کند و کاربر باید مجموعه‌اش را
+   * مشخص کند.
+   */
+  const login = useCallback(
+    async (username: string, password: string, tenantId?: string) => {
+      const result = await api.post<LoginResponse>('/auth/login', {
+        username,
+        password,
+        ...(tenantId ? { tenantId } : {}),
+      });
 
-    session.save(result.accessToken, result.user);
-    notify();
-    return result.user;
-  }, []);
+      session.save(result.accessToken, result.user);
+      notify();
+      return result.user;
+    },
+    [],
+  );
 
   const logout = useCallback(() => {
     session.clear();
