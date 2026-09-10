@@ -1,5 +1,5 @@
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
-import { CashRegisterStatus, UserRole } from '@prisma/client';
+import { UserRole } from '@prisma/client';
 
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import {
@@ -13,6 +13,10 @@ import {
   REGISTER_DETAIL_FIELDS,
   REGISTER_SUMMARY_FIELDS,
 } from './register-fields';
+import {
+  buildRegisterWhere,
+  type RegisterFilters,
+} from './register-filters';
 
 @Injectable()
 export class RegisterQueryService {
@@ -28,31 +32,9 @@ export class RegisterQueryService {
   async findAll(
     actor: RequestUser,
     pagination: PaginationDto,
-    filters: {
-      status?: CashRegisterStatus;
-      branchId?: string;
-      cashierId?: string;
-      dateFrom?: string;
-      dateTo?: string;
-    } = {},
+    filters: RegisterFilters = {},
   ): Promise<PaginatedResult<unknown>> {
-    const where = {
-      tenantId: actor.tenantId,
-      ...(actor.role === UserRole.cashier ? { cashierId: actor.id } : {}),
-      ...(filters.status ? { status: filters.status } : {}),
-      ...(filters.branchId ? { branchId: filters.branchId } : {}),
-      ...(filters.cashierId && actor.role !== UserRole.cashier
-        ? { cashierId: filters.cashierId }
-        : {}),
-      ...(filters.dateFrom || filters.dateTo
-        ? {
-            businessDate: {
-              ...(filters.dateFrom ? { gte: new Date(filters.dateFrom) } : {}),
-              ...(filters.dateTo ? { lte: new Date(filters.dateTo) } : {}),
-            },
-          }
-        : {}),
-    };
+    const where = buildRegisterWhere(actor, filters);
 
     const [items, total] = await this.prisma.$transaction([
       this.prisma.cashRegister.findMany({

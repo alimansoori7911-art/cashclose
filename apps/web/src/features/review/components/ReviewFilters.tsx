@@ -1,5 +1,6 @@
 import { CASH_REGISTER_STATUS_LABELS, CashRegisterStatus } from '@cashclose/shared';
 
+import { NumberInput } from '../../../components/ui/NumberInput/index';
 import { SelectInput } from '../../../components/ui/SelectInput/index';
 import { TextInput } from '../../../components/ui/TextInput/index';
 import { useBranches } from '../../admin/hooks/useAdminData';
@@ -64,6 +65,32 @@ export function ReviewFilters({ filters, onChange }: Props) {
         onChange={(event) => update({ dateTo: event.target.value || undefined })}
         ltr
       />
+
+      {/* بند ۹ سند: فیلتر بر اساس مبلغ خاص یا بازه. روی جمع اسناد
+          اعمال می‌شود — همان عددی که حسابدار در ذهن دارد. */}
+      <NumberInput
+        label="جمع اسناد از"
+        value={filters.amountMin ?? null}
+        onChange={(amountMin) => update({ amountMin: amountMin ?? undefined })}
+      />
+
+      <NumberInput
+        label="جمع اسناد تا"
+        value={filters.amountMax ?? null}
+        onChange={(amountMax) => update({ amountMax: amountMax ?? undefined })}
+      />
+
+      <label className="flex cursor-pointer items-center gap-2 self-end pb-2 text-sm text-text">
+        <input
+          type="checkbox"
+          checked={filters.onlyWithDiscrepancy ?? false}
+          onChange={(event) =>
+            update({ onlyWithDiscrepancy: event.target.checked || undefined })
+          }
+          className="size-4 accent-primary"
+        />
+        فقط دارای مازاد یا کسری
+      </label>
     </div>
   );
 }

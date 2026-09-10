@@ -1,6 +1,18 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { CashRegisterStatus } from '@prisma/client';
-import { IsEnum, IsISO8601, IsOptional, IsUUID } from 'class-validator';
+import { Transform, Type } from 'class-transformer';
+import {
+  IsBoolean,
+  IsEnum,
+  IsInt,
+  IsISO8601,
+  IsOptional,
+  IsUUID,
+  Max,
+  Min,
+} from 'class-validator';
+
+import { MAX_AMOUNT } from '@cashclose/shared';
 
 import { PaginationDto } from '../../../common/pagination/pagination.dto';
 
@@ -42,4 +54,38 @@ export class ListRegistersDto extends PaginationDto {
     { message: 'تاریخ پایان باید به قالب YYYY-MM-DD باشد.' },
   )
   dateTo?: string;
+
+  /**
+   * فیلتر بر اساس مبلغ (بند ۹ سند: «بر اساس فیلتر با مبلغ خاص یا بازه»).
+   *
+   * روی **جمع اسناد** اعمال می‌شود، چون همان عددی است که حسابدار هنگام
+   * جست‌وجوی یک صندوق مشخص در ذهن دارد.
+   */
+  @ApiPropertyOptional({ example: 10_000_000, description: 'حداقل جمع اسناد' })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt({ message: 'حداقل مبلغ باید عدد صحیح باشد.' })
+  @Min(0, { message: 'مبلغ نمی‌تواند منفی باشد.' })
+  @Max(MAX_AMOUNT, { message: 'مبلغ بیش از حد مجاز است.' })
+  amountMin?: number;
+
+  @ApiPropertyOptional({ example: 50_000_000, description: 'حداکثر جمع اسناد' })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt({ message: 'حداکثر مبلغ باید عدد صحیح باشد.' })
+  @Min(0, { message: 'مبلغ نمی‌تواند منفی باشد.' })
+  @Max(MAX_AMOUNT, { message: 'مبلغ بیش از حد مجاز است.' })
+  amountMax?: number;
+
+  /**
+   * فقط صندوق‌هایی که مازاد یا کسری داشته‌اند.
+   *
+   * بستن صندوق فقط با اختلاف صفر ممکن است، پس مازاد/کسری همیشه به‌صورت
+   * قلم صریح ثبت می‌شود — این فیلتر همان‌ها را پیدا می‌کند.
+   */
+  @ApiPropertyOptional({ description: 'فقط صندوق‌های دارای مازاد یا کسری' })
+  @IsOptional()
+  @Transform(({ value }) => value === 'true' || value === true)
+  @IsBoolean()
+  onlyWithDiscrepancy?: boolean;
 }

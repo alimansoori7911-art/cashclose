@@ -36,13 +36,9 @@ export class CashRegistersController {
   @Get()
   @ApiOperation({ summary: 'فهرست صندوق‌ها با فیلتر' })
   findAll(@CurrentUser() user: RequestUser, @Query() query: ListRegistersDto) {
-    return this.query.findAll(user, query, {
-      status: query.status,
-      branchId: query.branchId,
-      cashierId: query.cashierId,
-      dateFrom: query.dateFrom,
-      dateTo: query.dateTo,
-    });
+    // خودِ DTO به‌عنوان فیلتر پاس داده می‌شود: برشمردن تک‌تک فیلدها
+    // باعث شده بود فیلترهای تازه بی‌صدا نادیده گرفته شوند.
+    return this.query.findAll(user, query, query);
   }
 
   /** صندوق باز فعلی — نقطهٔ ورود داشبورد صندوقدار. */

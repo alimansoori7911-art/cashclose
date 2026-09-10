@@ -22,6 +22,11 @@ export interface RegisterFilters {
   cashierId?: string;
   dateFrom?: string;
   dateTo?: string;
+  /** بازهٔ جمع اسناد (بند ۹ سند: فیلتر با مبلغ خاص یا بازه). */
+  amountMin?: number;
+  amountMax?: number;
+  /** فقط صندوق‌هایی که با مازاد یا کسری بسته شده‌اند. */
+  onlyWithDiscrepancy?: boolean;
 }
 
 /** فهرست صندوق‌ها برای حسابدار، با فیلترهای سمت سرور (بند AC6 سند). */
