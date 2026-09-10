@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { MAX_IMAGES_PER_ROW } from '@cashclose/shared';
+
 /**
  * اعتبارسنجی متغیرهای محیطی هنگام بالا آمدن سرویس.
  *
@@ -44,7 +46,11 @@ const envSchema = z.object({
   STORAGE_DRIVER: z.enum(['local', 's3']).default('local'),
   STORAGE_LOCAL_PATH: z.string().default('./uploads'),
   UPLOAD_MAX_FILE_SIZE_MB: z.coerce.number().positive().default(3),
-  UPLOAD_MAX_FILES_PER_SECTION: z.coerce.number().int().positive().default(5),
+  UPLOAD_MAX_FILES_PER_SECTION: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(MAX_IMAGES_PER_ROW),
 
   RATE_LIMIT_TTL_SECONDS: z.coerce.number().int().positive().default(60),
   RATE_LIMIT_MAX: z.coerce.number().int().positive().default(120),

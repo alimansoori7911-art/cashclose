@@ -43,6 +43,40 @@ export function assignSavedIds(
 }
 
 /**
+ * نشاندن تصاویر تازهٔ سرور روی ردیف‌ها — و **فقط** تصاویر.
+ *
+ * تصویر برخلاف مبلغ و توضیح، سمت سرور تغییر می‌کند (آپلود و حذف مستقیم
+ * انجام می‌شوند)، پس تنها منبع درستش پاسخ سرور است.
+ *
+ * وقتی چیزی عوض نشده، **همان آرایهٔ قبلی** برگردانده می‌شود: ساختن شیء
+ * تازه در هر واکشی، رندر بی‌پایان راه می‌انداخت.
+ */
+export function mergeImages(
+  rows: FormRow[],
+  byRowId: Map<string, FormRow['images']>,
+): FormRow[] {
+  let changed = false;
+
+  const next = rows.map((row) => {
+    if (!row.id) return row;
+
+    const fresh = byRowId.get(row.id);
+    if (!fresh) return row;
+
+    const same =
+      fresh.length === row.images.length &&
+      fresh.every((image, index) => image.id === row.images[index]?.id);
+
+    if (same) return row;
+
+    changed = true;
+    return { ...row, images: fresh };
+  });
+
+  return changed ? next : rows;
+}
+
+/**
  * تبدیل ردیف‌های فرم به بدنهٔ درخواست.
  *
  * ردیف کاملاً خالی حذف می‌شود، ولی ردیفی که تصویر دارد همیشه می‌ماند —

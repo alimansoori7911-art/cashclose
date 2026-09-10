@@ -7,6 +7,7 @@ import { useCallback, useMemo, useState } from 'react';
 
 import {
   assignSavedIds,
+  mergeImages,
   rowsToPayload,
   type SavedTransaction,
 } from './row-identity';
@@ -101,6 +102,17 @@ export function useRegisterForm(initialRows: FormRow[] = []) {
     setRows((current) => assignSavedIds(current, saved));
   }, []);
 
+  /**
+   * هم‌گام‌سازی تصاویر با سرور.
+   *
+   * محافظِ «یک‌بار بارگذاری» که جلوی بازنویسی ورودی‌های نیمه‌تایپ‌شده را
+   * می‌گیرد، تصاویر تازه را هم بلوکه می‌کرد و عکس پس از آپلود ناپدید
+   * می‌شد. اینجا فقط `images` جایگزین می‌شود.
+   */
+  const syncImages = useCallback((byRowId: Map<string, RowImage[]>) => {
+    setRows((current) => mergeImages(current, byRowId));
+  }, []);
+
   /** نتیجهٔ محاسبه — با هر تغییر ردیف‌ها دوباره حساب می‌شود. */
   const calculation: CashCalculationResult = useMemo(
     () =>
@@ -123,6 +135,7 @@ export function useRegisterForm(initialRows: FormRow[] = []) {
     removeRow,
     replaceAll,
     applySavedIds,
+    syncImages,
     toPayload,
   };
 }

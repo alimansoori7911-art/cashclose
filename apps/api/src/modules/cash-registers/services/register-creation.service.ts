@@ -11,9 +11,9 @@ import { AuditService } from '../../audit/audit.service';
 import {
   assertDateAllowed,
   assertNoBlockingRegister,
-  assertValidTwoDayRange,
   OPEN_STATUSES,
 } from '../cash-register.rules';
+import { assertValidTwoDayRange } from '../two-day.rules';
 import type { CreateCashRegisterDto } from '../dto/create-register.dto';
 import { REGISTER_SUMMARY_FIELDS } from './register-fields';
 

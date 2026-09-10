@@ -1,7 +1,9 @@
 import { BadRequestException, ConflictException } from '@nestjs/common';
 import { CashRegisterStatus } from '@prisma/client';
 
-import { addDaysIso, todayIso } from '@cashclose/shared';
+import { addDaysIso, MAX_BACKDATE_DAYS, todayIso } from '@cashclose/shared';
+
+export { MAX_BACKDATE_DAYS };
 
 /**
  * قواعد کسب‌وکاری صندوق روزانه (بخش ۱۱.۱ سند).
@@ -10,10 +12,18 @@ import { addDaysIso, todayIso } from '@cashclose/shared';
  * دیتابیس تست شوند — این قواعد قلب سامانه‌اند و باید قطعی باشند.
  */
 
-/** وضعیت‌هایی که «باز» محسوب می‌شوند و مانع ساخت صندوق جدیدند. */
+/**
+ * وضعیت‌هایی که مانع ساخت صندوق جدیدند.
+ *
+ * سند (بند ۱۱.۱) می‌گوید «اگر صندوقدار صندوق روز گذشته را **نبسته**
+ * باشد» — یعنی کاری که خودِ صندوقدار باید انجام دهد و نداده است.
+ *
+ * صندوق ارسال‌شده عمداً اینجا نیست: توپ در زمین حسابدار است، نه
+ * صندوقدار. اگر حسابدار چند روز نیاید (تعطیلی اداری) ولی فروشگاه باز
+ * باشد، صندوقدار نباید بیکار بماند.
+ */
 export const OPEN_STATUSES: readonly CashRegisterStatus[] = [
   CashRegisterStatus.draft,
-  CashRegisterStatus.submitted,
   CashRegisterStatus.rejected,
 ];
 
@@ -32,14 +42,14 @@ export function isEditable(status: CashRegisterStatus): boolean {
 }
 
 /**
- * تاریخ صندوق فقط امروز یا دیروز (بند ۱۱.۱ قاعدهٔ ۲).
+ * تاریخ صندوق: از امروز تا حداکثر یک هفته پیش (بند ۱۱.۱ قاعدهٔ ۲).
  *
- * صندوق آینده بی‌معناست و صندوق قدیمی‌تر از دیروز یعنی چند روز فراموش
- * شده که باید با فلوی «دو روزه» یا دخالت مدیر حل شود، نه ساخت عادی.
+ * صندوق آینده بی‌معناست. برای گذشته سقف وجود دارد تا خطای تایپ تاریخ
+ * به سال‌ها قبل نرود، ولی آن‌قدر هست که تعطیلی چندروزه را پوشش دهد.
  */
 export function assertDateAllowed(businessDate: string): void {
   const today = todayIso();
-  const yesterday = addDaysIso(today, -1);
+  const earliest = addDaysIso(today, -MAX_BACKDATE_DAYS);
 
   if (businessDate > today) {
     throw new BadRequestException(
@@ -47,9 +57,9 @@ export function assertDateAllowed(businessDate: string): void {
     );
   }
 
-  if (businessDate < yesterday) {
+  if (businessDate < earliest) {
     throw new BadRequestException(
-      'صندوق فقط برای امروز یا دیروز قابل ایجاد است. برای روزهای قدیمی‌تر با مدیر تماس بگیرید.',
+      `صندوق حداکثر تا ${MAX_BACKDATE_DAYS} روز گذشته قابل ایجاد است. برای روزهای قدیمی‌تر با مدیر تماس بگیرید.`,
     );
   }
 }
@@ -111,30 +121,6 @@ export function assertEditable(status: CashRegisterStatus): void {
       ? 'صندوق ارسال‌شده تا زمان بررسی حسابدار قابل ویرایش نیست.'
       : 'صندوق تأییدشده قابل ویرایش نیست.',
   );
-}
-
-/**
- * صندوق دوروزه: تاریخ پایان باید دقیقاً روز بعدِ تاریخ شروع باشد.
- *
- * فاصلهٔ بیشتر یعنی چند روز فراموش شده که خارج از این فلوست.
- */
-export function assertValidTwoDayRange(
-  businessDate: string,
-  coversUntil: string,
-): void {
-  if (coversUntil <= businessDate) {
-    throw new BadRequestException(
-      'تاریخ پایان صندوق دوروزه باید بعد از تاریخ شروع باشد.',
-    );
-  }
-
-  if (coversUntil !== addDaysIso(businessDate, 1)) {
-    throw new BadRequestException(
-      'صندوق دوروزه فقط برای دو روز پشت سر هم مجاز است.',
-    );
-  }
-
-  assertDateAllowed(coversUntil);
 }
 
 /** `Date` دیتابیس → رشتهٔ `YYYY-MM-DD` برای مقایسه. */

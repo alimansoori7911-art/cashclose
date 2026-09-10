@@ -42,5 +42,22 @@ export function useLoadedRegisterForm(detail: RegisterDetail | undefined) {
     form.replaceAll([...saved, ...missing]);
   }, [detail, form]);
 
+  /**
+   * تصاویر با هر واکشی تازه می‌شوند، برخلاف بقیهٔ فیلدها.
+   *
+   * آپلود و حذف تصویر مستقیم روی سرور انجام می‌شود، پس تنها منبع درست
+   * همان پاسخ سرور است. اگر مثل بقیهٔ فیلدها فقط یک‌بار خوانده می‌شد،
+   * عکس تازه‌آپلودشده هرگز روی فرم نمی‌نشست.
+   */
+  useEffect(() => {
+    if (!detail) return;
+
+    const byRowId = new Map(
+      detail.transactions.map((t) => [t.id, t.uploads ?? []]),
+    );
+
+    form.syncImages(byRowId);
+  }, [detail, form]);
+
   return form;
 }

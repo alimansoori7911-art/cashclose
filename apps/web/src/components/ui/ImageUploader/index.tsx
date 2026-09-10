@@ -1,3 +1,4 @@
+import { MAX_IMAGES_PER_ROW } from '@cashclose/shared';
 import { useRef, useState, type DragEvent } from 'react';
 
 import { Alert } from '../Alert/index';
@@ -23,7 +24,7 @@ interface Props {
 export function ImageUploader({
   transactionId,
   images,
-  max = 5,
+  max = MAX_IMAGES_PER_ROW,
   readOnly = false,
   label = 'تصاویر',
 }: Props) {

@@ -1,6 +1,8 @@
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
+import { MAX_IMAGES_PER_ROW } from '@cashclose/shared';
+
 import { PrismaService } from '../../common/prisma/prisma.service';
 import {
   STORAGE_PROVIDER,
@@ -36,7 +38,7 @@ export class UploadsService {
       config.get<number>('UPLOAD_MAX_FILE_SIZE_MB', 3) * 1024 * 1024;
     this.maxPerSection = config.get<number>(
       'UPLOAD_MAX_FILES_PER_SECTION',
-      5,
+      MAX_IMAGES_PER_ROW,
     );
   }
 

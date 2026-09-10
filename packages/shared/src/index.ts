@@ -10,5 +10,6 @@
 export * from './domain/transactions/index.js';
 export * from './domain/calculation/index.js';
 export * from './domain/roles.js';
+export * from './domain/register-limits.js';
 export * from './utils/money.js';
 export * from './utils/jalali.js';

@@ -9,10 +9,11 @@ import {
   assertDateAllowed,
   assertEditable,
   assertNoBlockingRegister,
-  assertValidTwoDayRange,
   isEditable,
   isOpen,
+  MAX_BACKDATE_DAYS,
 } from './cash-register.rules';
+import { assertValidTwoDayRange } from './two-day.rules';
 
 const TODAY = todayIso();
 const YESTERDAY = addDaysIso(TODAY, -1);
@@ -32,10 +33,19 @@ describe('قاعدهٔ تاریخ صندوق', () => {
     expect(() => assertDateAllowed(TOMORROW)).toThrow(/آینده/);
   });
 
-  it('تاریخ قدیمی‌تر از دیروز رد می‌شود', () => {
-    expect(() => assertDateAllowed(addDaysIso(TODAY, -2))).toThrow(
-      /امروز یا دیروز/,
-    );
+  it('تا یک هفتهٔ گذشته مجاز است', () => {
+    // تعطیلی اداری چندروزه در حالی که فروشگاه باز است، حالت واقعی است.
+    for (let back = 2; back <= MAX_BACKDATE_DAYS; back += 1) {
+      expect(() =>
+        assertDateAllowed(addDaysIso(TODAY, -back)),
+      ).not.toThrow();
+    }
+  });
+
+  it('قدیمی‌تر از سقف رد می‌شود', () => {
+    expect(() =>
+      assertDateAllowed(addDaysIso(TODAY, -(MAX_BACKDATE_DAYS + 1))),
+    ).toThrow(/روز گذشته/);
   });
 });
 
@@ -135,11 +145,22 @@ describe('قاعدهٔ ویرایش', () => {
     );
   });
 
-  it('سه وضعیت «باز» درست تشخیص داده می‌شوند', () => {
+  it('فقط وضعیت‌هایی که کارِ صندوقدار ناتمام است «باز» شمرده می‌شوند', () => {
     expect(isOpen(CashRegisterStatus.draft)).toBe(true);
-    expect(isOpen(CashRegisterStatus.submitted)).toBe(true);
     expect(isOpen(CashRegisterStatus.rejected)).toBe(true);
     expect(isOpen(CashRegisterStatus.approved)).toBe(false);
+  });
+
+  it('صندوق ارسال‌شده مانع ساخت صندوق جدید نیست', () => {
+    // اگر حسابدار چند روز نیاید (تعطیلی اداری) ولی فروشگاه باز باشد،
+    // صندوقدار نباید بیکار بماند. توپ در زمین حسابدار است نه او.
+    expect(isOpen(CashRegisterStatus.submitted)).toBe(false);
+  });
+
+  it('صندوق ارسال‌شده همچنان غیرقابل ویرایش است', () => {
+    // «مانع نبودن» با «قابل ویرایش بودن» یکی نیست: صندوق ارسال‌شده تا
+    // تصمیم حسابدار قفل می‌ماند.
+    expect(isEditable(CashRegisterStatus.submitted)).toBe(false);
   });
 });
 

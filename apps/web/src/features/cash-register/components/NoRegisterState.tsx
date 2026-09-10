@@ -1,8 +1,8 @@
-import { addDaysIso, formatJalaliLong, todayIso } from '@cashclose/shared';
-import { useState } from 'react';
+import { formatJalaliLong } from '@cashclose/shared';
 
 import { Alert } from '../../../components/ui/Alert/index';
 import { Button } from '../../../components/ui/Button/index';
+import { useDateChoice } from '../hooks/useDateChoice';
 
 export interface CreateRegisterOptions {
   businessDate: string;
@@ -26,15 +26,7 @@ export function NoRegisterState({
   creating: boolean;
   error: string | null;
 }) {
-  const today = todayIso();
-  const yesterday = addDaysIso(today, -1);
-
-  const [businessDate, setBusinessDate] = useState(today);
-  const [isTwoDay, setTwoDay] = useState(false);
-
-  // صندوق دوروزه فقط از دیروز معنا دارد: روز دوم نمی‌تواند فردا باشد.
-  const twoDayAvailable = businessDate === yesterday;
-  const twoDayActive = isTwoDay && twoDayAvailable;
+  const date = useDateChoice();
 
   return (
     <div className="mx-auto max-w-md">
@@ -56,32 +48,27 @@ export function NoRegisterState({
           تاریخ صندوق
         </legend>
 
-        <div className="flex flex-col gap-2">
-          <DateChoice
-            checked={businessDate === today}
-            onSelect={() => {
-              setBusinessDate(today);
-              setTwoDay(false);
-            }}
-            label={`امروز — ${formatJalaliLong(today)}`}
-          />
-          <DateChoice
-            checked={businessDate === yesterday}
-            onSelect={() => setBusinessDate(yesterday)}
-            label={`دیروز — ${formatJalaliLong(yesterday)}`}
-          />
+        <div className="flex max-h-64 flex-col gap-2 overflow-y-auto">
+          {date.options.map((option) => (
+            <DateChoice
+              key={option.iso}
+              checked={date.businessDate === option.iso}
+              onSelect={() => date.select(option.iso)}
+              label={option.label}
+            />
+          ))}
         </div>
 
-        {twoDayAvailable && (
+        {date.twoDayAvailable && (
           <label className="mt-3 flex cursor-pointer items-start gap-2 border-t border-border pt-3">
             <input
               type="checkbox"
-              checked={isTwoDay}
-              onChange={(event) => setTwoDay(event.target.checked)}
+              checked={date.isTwoDay}
+              onChange={(event) => date.setTwoDay(event.target.checked)}
               className="mt-0.5 size-4 accent-primary"
             />
             <span className="text-sm text-text">
-              بستن دیروز و امروز با هم
+              بستن این روز و روز بعدش با هم
               <span className="mt-0.5 block text-xs text-text-muted">
                 یک صندوق برای هر دو روز ثبت می‌شود و اقلام هر دو روز با هم
                 تراز می‌شوند.
@@ -91,10 +78,10 @@ export function NoRegisterState({
         )}
       </fieldset>
 
-      {twoDayActive && (
+      {date.coversUntil && (
         <Alert tone="info" className="mb-4">
-          این صندوق {formatJalaliLong(yesterday)} تا {formatJalaliLong(today)}{' '}
-          را پوشش می‌دهد.
+          این صندوق {formatJalaliLong(date.businessDate)} تا{' '}
+          {formatJalaliLong(date.coversUntil)} را پوشش می‌دهد.
         </Alert>
       )}
 
@@ -103,13 +90,15 @@ export function NoRegisterState({
           loading={creating}
           onClick={() =>
             onCreate({
-              businessDate,
-              isTwoDay: twoDayActive,
-              ...(twoDayActive ? { coversUntilDate: today } : {}),
+              businessDate: date.businessDate,
+              isTwoDay: date.twoDayActive,
+              ...(date.coversUntil
+                ? { coversUntilDate: date.coversUntil }
+                : {}),
             })
           }
         >
-          {twoDayActive ? 'ایجاد صندوق دوروزه' : 'ایجاد صندوق'}
+          {date.twoDayActive ? 'ایجاد صندوق دوروزه' : 'ایجاد صندوق'}
         </Button>
       </div>
     </div>
