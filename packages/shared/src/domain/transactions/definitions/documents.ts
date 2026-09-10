@@ -23,6 +23,8 @@ export const DOCUMENT_ITEMS: readonly TransactionTypeDefinition[] = [
     hasImages: true,
     isMultiRow: true,
     needsTerminal: false,
+    requiresDescription: false,
+    requiresImages: true,
     hint: 'چک‌های دریافتی از مشتریان؛ برای هر چک عکس جداگانه قابل بارگذاری است.',
   },
   {
@@ -33,6 +35,8 @@ export const DOCUMENT_ITEMS: readonly TransactionTypeDefinition[] = [
     hasImages: true,
     isMultiRow: true,
     needsTerminal: true,
+    requiresDescription: false,
+    requiresImages: true,
     hint: 'مبلغ هر دستگاه کارتخوان به تفکیک، به‌همراه عکس رسید پایان روز هر دستگاه.',
   },
   {
@@ -43,6 +47,8 @@ export const DOCUMENT_ITEMS: readonly TransactionTypeDefinition[] = [
     hasImages: true,
     isMultiRow: true,
     needsTerminal: true,
+    requiresDescription: false,
+    requiresImages: true,
     hint: 'واریزهای کارت‌به‌کارت؛ شمارهٔ کارت مقصد و عکس رسید.',
   },
   {
@@ -53,6 +59,8 @@ export const DOCUMENT_ITEMS: readonly TransactionTypeDefinition[] = [
     hasImages: false,
     isMultiRow: false,
     needsTerminal: false,
+    requiresDescription: false,
+    requiresImages: false,
     hint: 'مجموع وجه نقد شمرده‌شده در صندوق.',
   },
   {
@@ -63,6 +71,8 @@ export const DOCUMENT_ITEMS: readonly TransactionTypeDefinition[] = [
     hasImages: false,
     isMultiRow: true,
     needsTerminal: false,
+    requiresDescription: true,
+    requiresImages: false,
     hint: 'ارز دریافتی؛ مبلغ معادل ریالی وارد و نوع/مبلغ ارز در توضیح نوشته می‌شود.',
   },
   {
@@ -73,6 +83,8 @@ export const DOCUMENT_ITEMS: readonly TransactionTypeDefinition[] = [
     hasImages: false,
     isMultiRow: false,
     needsTerminal: false,
+    requiresDescription: false,
+    requiresImages: false,
     hint: 'مجموع فروش از طریق درگاه پرداخت اینترنتی.',
   },
 ] as const;

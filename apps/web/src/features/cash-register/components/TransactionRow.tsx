@@ -20,6 +20,16 @@ interface Props {
 export function TransactionRow({ row, disabled, onChange, onRemove }: Props) {
   const definition = getTransactionType(row.type);
 
+  // هشدار فقط وقتی مبلغ وارد شده: ردیف صفر یعنی این قلم امروز رخ نداده.
+  const hasAmount = (row.amount ?? 0) > 0;
+  const missingImages =
+    definition.requiresImages && row.images.length === 0;
+  const needsAttention =
+    hasAmount &&
+    !disabled &&
+    (missingImages || definition.requiresDescription) &&
+    row.description.trim() === '';
+
   return (
     <div className="rounded-lg border border-border bg-surface p-3">
       <div className="flex items-center justify-between gap-3">
@@ -60,16 +70,29 @@ export function TransactionRow({ row, disabled, onChange, onRemove }: Props) {
       </div>
 
       {definition.hasDescription && (
-        <input
-          type="text"
+        // چندسطری طبق بند ۸.۳ سند: صندوقدار گاهی برای دو سه مورد در یک
+        // قلم توضیح می‌نویسد و یک سطر جا نمی‌شود.
+        <textarea
           value={row.description}
           disabled={disabled}
+          rows={2}
           maxLength={300}
-          placeholder="توضیح (اختیاری)"
+          placeholder={
+            definition.requiresDescription ? 'توضیح (اجباری)' : 'توضیح (اختیاری)'
+          }
           onChange={(event) => onChange({ description: event.target.value })}
           aria-label={`توضیح ${definition.label}`}
-          className="mt-2 w-full rounded border border-border bg-bg px-3 py-1.5 text-sm text-text placeholder:text-text-muted focus:border-primary focus:outline-none disabled:bg-surface-muted"
+          className="mt-2 w-full resize-y rounded border border-border bg-bg px-3 py-1.5 text-sm text-text placeholder:text-text-muted focus:border-primary focus:outline-none disabled:bg-surface-muted"
         />
+      )}
+
+      {needsAttention && (
+        // رنگ تنها حامل معنا نیست: متن صریح می‌گوید چه کم است.
+        <p className="mt-1.5 text-xs text-warning">
+          {definition.requiresImages && row.images.length === 0
+            ? 'عکس این قلم اجباری است؛ اگر ندارید دلیلش را در توضیح بنویسید.'
+            : 'توضیح این قلم اجباری است.'}
+        </p>
       )}
 
       {definition.hasImages && (

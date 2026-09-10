@@ -77,6 +77,41 @@ describe('جدول انواع تراکنش', () => {
     }
   });
 
+  it('قلمی که فیلد ندارد، نمی‌تواند آن را اجباری کند', () => {
+    // ناسازگاری اینجا یعنی فرم چیزی را اجبار می‌کند که جایی برای
+    // واردکردنش وجود ندارد — بن‌بست برای صندوقدار.
+    for (const def of TRANSACTION_TYPES) {
+      if (def.requiresDescription) expect(def.hasDescription).toBe(true);
+      if (def.requiresImages) expect(def.hasImages).toBe(true);
+    }
+  });
+
+  it('جدول اجباری‌های سند ورژن ۲ تثبیت می‌شود', () => {
+    const required = (type: TransactionType) => {
+      const def = getTransactionType(type);
+      return [def.requiresDescription, def.requiresImages];
+    };
+
+    // فروش کل و برگشت کالا: عکس اجباری، توضیح نه.
+    expect(required(TransactionType.SALES_TOTAL)).toEqual([false, true]);
+    expect(required(TransactionType.GOODS_RETURN)).toEqual([false, true]);
+
+    // مازاد و کسری: دلیلشان باید نوشته شود، عکس ندارند.
+    expect(required(TransactionType.CASH_SURPLUS)).toEqual([true, false]);
+    expect(required(TransactionType.CASH_SHORTAGE)).toEqual([true, false]);
+
+    // اقلام سنددار: هم توضیح هم عکس.
+    expect(required(TransactionType.CREDIT_NOTE_ISSUED)).toEqual([true, true]);
+
+    // اسناد پرداخت: عکس اجباری، توضیح اختیاری.
+    expect(required(TransactionType.CHEQUE)).toEqual([false, true]);
+    expect(required(TransactionType.POS)).toEqual([false, true]);
+
+    // نقدی و درگاه: هیچ‌کدام.
+    expect(required(TransactionType.CASH)).toEqual([false, false]);
+    expect(required(TransactionType.ONLINE_GATEWAY)).toEqual([false, false]);
+  });
+
   it('نوع ناشناخته را رد می‌کند', () => {
     expect(() =>
       getTransactionType('not_a_real_type' as TransactionType),

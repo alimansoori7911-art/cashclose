@@ -2,6 +2,7 @@ import type { CashRegisterStatus } from '@cashclose/shared';
 import { useState } from 'react';
 
 import { AppLayout } from '../components/layout/AppLayout';
+import { CompletenessModal } from '../features/cash-register/components/CompletenessModal';
 import { NoRegisterState } from '../features/cash-register/components/NoRegisterState';
 import { RegisterForm } from '../features/cash-register/components/RegisterForm';
 import { RegisterHeader } from '../features/cash-register/components/RegisterHeader';
@@ -10,6 +11,7 @@ import {
   useAutoSave,
   useUnsavedWarning,
 } from '../features/cash-register/hooks/useAutoSave';
+import { useCloseFlow } from '../features/cash-register/hooks/useCloseFlow';
 import { useDraftSaver } from '../features/cash-register/hooks/useDraftSaver';
 import { useLoadedRegisterForm } from '../features/cash-register/hooks/useLoadedRegisterForm';
 import {
@@ -32,6 +34,11 @@ export function CashRegisterPage() {
   const draft = useDraftSaver(registerId, form);
 
   const [createError, setCreateError] = useState<string | null>(null);
+  const closeFlow = useCloseFlow({
+    rows: form.rows,
+    draft,
+    closeRegister,
+  });
 
   const status = current.data?.status;
   const readOnly = status === 'submitted' || status === 'approved';
@@ -48,20 +55,6 @@ export function CashRegisterPage() {
     onSave: () => void draft.saveDraft().catch(() => undefined),
   });
   useUnsavedWarning(form.isDirty && !readOnly);
-
-  async function handleClose() {
-    try {
-      // پیش از بستن، آخرین تغییرات ذخیره می‌شود تا سرور روی دادهٔ کامل
-      // تصمیم بگیرد.
-      await draft.saveDraft();
-      const result = await closeRegister.mutateAsync();
-      draft.setNotice(result.message);
-    } catch (err) {
-      draft.setError(
-        err instanceof ApiError ? err.displayMessage : 'بستن صندوق ناموفق بود.',
-      );
-    }
-  }
 
   if (current.isPending) {
     return (
@@ -122,8 +115,20 @@ export function CashRegisterPage() {
         saving={draft.saving}
         closing={closeRegister.isPending}
         onSaveDraft={() => void draft.saveDraft().catch(() => undefined)}
-        onClose={handleClose}
+        onClose={closeFlow.requestClose}
       />
+
+      {closeFlow.showModal && (
+        <CompletenessModal
+          open
+          onClose={closeFlow.closeModal}
+          missing={closeFlow.completeness.missing}
+          rows={form.rows}
+          closing={closeFlow.closing}
+          onUpdate={form.update}
+          onConfirm={closeFlow.performClose}
+        />
+      )}
     </AppLayout>
   );
 }

@@ -23,6 +23,8 @@ export const BALANCE_SUBTRACTIONS: readonly TransactionTypeDefinition[] = [
     hasImages: false,
     isMultiRow: true,
     needsTerminal: false,
+    requiresDescription: true,
+    requiresImages: false,
     hint: 'مشتری جنسی آورده و فروخته و با مابه‌التفاوت آن جنس دیگری خریده است؛ شمارهٔ فاکتور در توضیح.',
   },
   {
@@ -33,6 +35,8 @@ export const BALANCE_SUBTRACTIONS: readonly TransactionTypeDefinition[] = [
     hasImages: true,
     isMultiRow: true,
     needsTerminal: false,
+    requiresDescription: true,
+    requiresImages: true,
     hint: 'مشتری وجه را در شعبهٔ دیگری پرداخت کرده و اکنون نیازی به پرداخت مجدد نیست.',
   },
   {
@@ -43,6 +47,8 @@ export const BALANCE_SUBTRACTIONS: readonly TransactionTypeDefinition[] = [
     hasImages: true,
     isMultiRow: true,
     needsTerminal: false,
+    requiresDescription: true,
+    requiresImages: true,
     hint: 'پرداخت هزینه بابت انجام سرویسی که وجه آن از مشتری دریافت شده است.',
   },
   {
@@ -53,6 +59,8 @@ export const BALANCE_SUBTRACTIONS: readonly TransactionTypeDefinition[] = [
     hasImages: true,
     isMultiRow: false,
     needsTerminal: false,
+    requiresDescription: false,
+    requiresImages: true,
     hint: 'مبلغ برگشت کالا ثبت‌شده در سیستم حسابداری.',
   },
   {
@@ -63,6 +71,8 @@ export const BALANCE_SUBTRACTIONS: readonly TransactionTypeDefinition[] = [
     hasImages: false,
     isMultiRow: true,
     needsTerminal: false,
+    requiresDescription: true,
+    requiresImages: false,
     hint: 'قرینهٔ مازاد صندوقِ روز قبل، یا هر دلیل موجه دیگر با تأیید کارفرما.',
   },
   {
@@ -73,6 +83,8 @@ export const BALANCE_SUBTRACTIONS: readonly TransactionTypeDefinition[] = [
     hasImages: false,
     isMultiRow: true,
     needsTerminal: false,
+    requiresDescription: true,
+    requiresImages: false,
     hint: 'مشتری خرید کرده ولی قرار است وجه آن را بعداً واریز کند.',
   },
   {
@@ -83,6 +95,8 @@ export const BALANCE_SUBTRACTIONS: readonly TransactionTypeDefinition[] = [
     hasImages: false,
     isMultiRow: true,
     needsTerminal: false,
+    requiresDescription: true,
+    requiresImages: false,
     hint: 'بخشی از وجه که پیش‌تر به‌عنوان بیعانه دریافت شده و امروز از مبلغ کل کسر می‌شود.',
   },
   {
@@ -93,6 +107,8 @@ export const BALANCE_SUBTRACTIONS: readonly TransactionTypeDefinition[] = [
     hasImages: false,
     isMultiRow: true,
     needsTerminal: false,
+    requiresDescription: true,
+    requiresImages: false,
     hint: 'تخفیف خارج از سیستم حسابداری که امکان ثبت آن در نرم‌افزار حسابداری وجود نداشته است.',
   },
 ] as const;
