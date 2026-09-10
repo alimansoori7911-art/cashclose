@@ -1,61 +1,57 @@
-import { USER_ROLE_LABELS, type UserRole } from '@cashclose/shared';
 import { useState } from 'react';
 
 import { Button } from '../../../components/ui/Button/index';
-import { DataTable, type Column } from '../../../components/ui/DataTable/index';
-import { formatJalali } from '@cashclose/shared';
+import { DataTable } from '../../../components/ui/DataTable/index';
+import { ApiError } from '../../../lib/api';
+import { useAuth } from '../../auth/hooks/useAuth';
 import {
   useBranches,
+  useDeactivate,
   useUsers,
   type AdminUser,
 } from '../hooks/useAdminData';
+import { ConfirmDeactivate } from './ConfirmDeactivate';
+import { buildUserColumns } from './user-columns';
+import { UserEditModal } from './UserEditModal';
 import { UserFormModal } from './UserFormModal';
 
 /** مدیریت کاربران. */
 export function UsersTab() {
+  const { user: actor } = useAuth();
   const users = useUsers();
   const branches = useBranches();
-  const [open, setOpen] = useState(false);
+  const deactivate = useDeactivate((id) => `/users/${id}`, 'users');
 
-  const columns: Column<AdminUser>[] = [
-    { key: 'fullName', header: 'نام', render: (u) => u.fullName },
-    {
-      key: 'username',
-      header: 'نام کاربری',
-      render: (u) => (
-        <span dir="ltr" className="inline-block">
-          {u.username}
-        </span>
-      ),
+  const [creating, setCreating] = useState(false);
+  const [editing, setEditing] = useState<AdminUser | null>(null);
+  const [removing, setRemoving] = useState<AdminUser | null>(null);
+  const [removeError, setRemoveError] = useState<string | null>(null);
+
+  async function handleDeactivate() {
+    if (!removing) return;
+    setRemoveError(null);
+
+    try {
+      await deactivate.mutateAsync(removing.id);
+      setRemoving(null);
+    } catch (err) {
+      setRemoveError(
+        err instanceof ApiError
+          ? err.displayMessage
+          : 'غیرفعال‌سازی ناموفق بود.',
+      );
+    }
+  }
+
+  const columns = buildUserColumns({
+    actorId: actor?.id,
+    actorRole: actor?.role,
+    onEdit: setEditing,
+    onDeactivate: (user) => {
+      setRemoveError(null);
+      setRemoving(user);
     },
-    {
-      key: 'role',
-      header: 'نقش',
-      render: (u) => USER_ROLE_LABELS[u.role as UserRole] ?? u.role,
-    },
-    {
-      key: 'branch',
-      header: 'شعبه',
-      render: (u) => u.branch?.name ?? '— ستادی',
-    },
-    {
-      key: 'lastLogin',
-      header: 'آخرین ورود',
-      render: (u) =>
-        u.lastLoginAt ? formatJalali(u.lastLoginAt.slice(0, 10)) : '—',
-    },
-    {
-      key: 'status',
-      header: 'وضعیت',
-      render: (u) => (
-        <span
-          className={u.status === 'active' ? 'text-balanced' : 'text-text-muted'}
-        >
-          {u.status === 'active' ? 'فعال' : 'غیرفعال'}
-        </span>
-      ),
-    },
-  ];
+  });
 
   return (
     <div className="flex flex-col gap-4">
@@ -63,7 +59,7 @@ export function UsersTab() {
         <p className="text-sm text-text-muted">
           {users.data?.totalItems ?? 0} کاربر
         </p>
-        <Button onClick={() => setOpen(true)}>افزودن کاربر</Button>
+        <Button onClick={() => setCreating(true)}>افزودن کاربر</Button>
       </div>
 
       <DataTable
@@ -77,10 +73,30 @@ export function UsersTab() {
       />
 
       <UserFormModal
-        open={open}
-        onClose={() => setOpen(false)}
+        open={creating}
+        onClose={() => setCreating(false)}
         branches={branches.data?.items ?? []}
       />
+
+      {editing && (
+        <UserEditModal
+          user={editing}
+          branches={branches.data?.items ?? []}
+          onClose={() => setEditing(null)}
+        />
+      )}
+
+      {removing && (
+        <ConfirmDeactivate
+          title="غیرفعال‌سازی کاربر"
+          name={removing.fullName}
+          note="کاربر دیگر نمی‌تواند وارد شود، ولی صندوق‌ها و سوابقش دست‌نخورده می‌مانند."
+          pending={deactivate.isPending}
+          error={removeError}
+          onCancel={() => setRemoving(null)}
+          onConfirm={() => void handleDeactivate()}
+        />
+      )}
     </div>
   );
 }
