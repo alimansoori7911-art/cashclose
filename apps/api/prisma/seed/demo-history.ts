@@ -6,18 +6,28 @@
  * تأییدشدهٔ واقع‌نما می‌سازد.
  *
  * اجرا: npm run db:demo-history --workspace @cashclose/api
+ * با دادهٔ سال گذشته: همان دستور + ` -- --with-last-year`
  */
 
-import { CashRegisterStatus, PrismaClient } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 
-import { buildAmounts } from './demo-amounts';
+import { createRegister, type SeedContext } from './demo-register';
 
 const prisma = new PrismaClient();
 
 /** بازهٔ ساخت — تا دو روز پیش، چون امروز و دیروز دست صندوقدار است. */
 const DAYS = 75;
 
-async function loadContext() {
+/**
+ * بازهٔ سال گذشته، برای آزمودن مقایسهٔ نظیربه‌نظیر (بند ۸ سمت مالک).
+ *
+ * با `--with-last-year` فعال می‌شود. حجم داده را چند برابر می‌کند، پس
+ * پیش‌فرض خاموش است و فقط وقتی لازم است ساخته می‌شود.
+ */
+const LAST_YEAR_START = 440;
+const LAST_YEAR_END = 370;
+
+async function loadContext(): Promise<SeedContext> {
   const tenant = await prisma.tenant.findFirst({ select: { id: true } });
   if (!tenant) throw new Error('ابتدا دادهٔ نمونه را بسازید (npm run db:seed).');
 
@@ -44,71 +54,16 @@ async function loadContext() {
   return { tenant, branches, cashiers, accountantId: accountant?.id ?? null };
 }
 
-type Context = Awaited<ReturnType<typeof loadContext>>;
-
-async function createRegister(
-  ctx: Context,
-  branchId: string,
-  cashierId: string,
-  date: Date,
-  dayOffset: number,
-  scale: number,
-) {
-  const { balance, rows } = buildAmounts(dayOffset, date, scale);
-
-  const register = await prisma.cashRegister.create({
-    data: {
-      tenantId: ctx.tenant.id,
-      branchId,
-      cashierId,
-      businessDate: date,
-      status: CashRegisterStatus.approved,
-      registerBalance: BigInt(balance),
-      documentsTotal: BigInt(balance),
-      difference: 0n,
-      submittedAt: date,
-      approvedAt: date,
-    },
-    select: { id: true },
-  });
-
-  await prisma.transaction.createMany({
-    data: rows.map((row, index) => ({
-      tenantId: ctx.tenant.id,
-      cashRegisterId: register.id,
-      type: row.type,
-      amount: BigInt(row.amount),
-      sortOrder: index,
-    })),
-  });
-
-  await prisma.cashRegisterHistory.createMany({
-    data: [
-      {
-        tenantId: ctx.tenant.id,
-        cashRegisterId: register.id,
-        status: CashRegisterStatus.submitted,
-        createdById: cashierId,
-      },
-      {
-        tenantId: ctx.tenant.id,
-        cashRegisterId: register.id,
-        status: CashRegisterStatus.approved,
-        createdById: ctx.accountantId,
-      },
-    ],
-  });
-}
-
-async function main() {
-  if (process.env.NODE_ENV === 'production') {
-    throw new Error('اجرای این اسکریپت در محیط تولید مجاز نیست.');
-  }
-
-  const ctx = await loadContext();
+/** ساخت صندوق برای یک بازهٔ روز، با ضریب حجم دلخواه. */
+async function fillRange(
+  ctx: SeedContext,
+  from: number,
+  to: number,
+  yearScale: number,
+): Promise<number> {
   let created = 0;
 
-  for (let offset = DAYS; offset >= 2; offset--) {
+  for (let offset = from; offset >= to; offset--) {
     const date = new Date();
     date.setDate(date.getDate() - offset);
     date.setHours(0, 0, 0, 0);
@@ -125,15 +80,45 @@ async function main() {
       if (exists) continue;
 
       // شعبهٔ دوم کوچک‌تر است تا مقایسهٔ شعب معنا پیدا کند.
-      const scale = branch.id === ctx.branches[0]?.id ? 1 : 0.65;
-      await createRegister(ctx, branch.id, cashier.id, date, offset, scale);
+      const branchScale = branch.id === ctx.branches[0]?.id ? 1 : 0.65;
+      await createRegister(
+        prisma,
+        ctx,
+        branch.id,
+        cashier.id,
+        date,
+        offset,
+        branchScale * yearScale,
+      );
       created += 1;
     }
+  }
+
+  return created;
+}
+
+async function main() {
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('اجرای این اسکریپت در محیط تولید مجاز نیست.');
+  }
+
+  const ctx = await loadContext();
+  const withLastYear = process.argv.includes('--with-last-year');
+
+  let created = await fillRange(ctx, DAYS, 2, 1);
+
+  if (withLastYear) {
+    // ضریب ۰٫۸: سال گذشته کمتر فروخته تا نمودار مقایسه رشد نشان دهد،
+    // نه دو ستون هم‌قد که چیزی از آن فهمیده نمی‌شود.
+    created += await fillRange(ctx, LAST_YEAR_START, LAST_YEAR_END, 0.8);
   }
 
   /* eslint-disable no-console */
   console.log(`${created} صندوق تأییدشدهٔ نمونه ساخته شد.`);
   console.log(`بازه: ${DAYS} روز گذشته، ${ctx.branches.length} شعبه.`);
+  if (withLastYear) {
+    console.log('بازهٔ سال گذشته هم ساخته شد (برای مقایسهٔ نظیربه‌نظیر).');
+  }
   /* eslint-enable no-console */
 }
 

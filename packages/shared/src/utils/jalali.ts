@@ -32,16 +32,6 @@ const PERSIAN_MONTHS = [
   'اسفند',
 ] as const;
 
-const PERSIAN_WEEKDAYS = [
-  'یکشنبه',
-  'دوشنبه',
-  'سه‌شنبه',
-  'چهارشنبه',
-  'پنج‌شنبه',
-  'جمعه',
-  'شنبه',
-] as const;
-
 function pad(value: number, length = 2): string {
   return String(value).padStart(length, '0');
 }
@@ -93,35 +83,6 @@ export function addDaysIso(iso: string, days: number): string {
   const date = new Date(y, m - 1, d);
   date.setDate(date.getDate() + days);
   return toIsoDate(date);
-}
-
-/** «۱۴۰۵/۰۱/۱۶» */
-export function formatJalali(iso: string): string {
-  const { jy, jm, jd } = isoToJalali(iso);
-  return `${jy}/${pad(jm)}/${pad(jd)}`;
-}
-
-/** «۱۶ فروردین ۱۴۰۵» */
-export function formatJalaliLong(iso: string): string {
-  const { jy, jm, jd } = isoToJalali(iso);
-  return `${jd} ${PERSIAN_MONTHS[jm - 1]} ${jy}`;
-}
-
-/** «شنبه، ۱۶ فروردین ۱۴۰۵» */
-export function formatJalaliWithWeekday(iso: string): string {
-  const { y, m, d } = parseIso(iso);
-  const weekday = PERSIAN_WEEKDAYS[new Date(y, m - 1, d).getDay()];
-  return `${weekday}، ${formatJalaliLong(iso)}`;
-}
-
-/** «14050116» — قالب فایل اکسل واقعی، برای خروجی صورتجلسه. */
-export function formatJalaliCompact(iso: string): string {
-  const { jy, jm, jd } = isoToJalali(iso);
-  return `${jy}${pad(jm)}${pad(jd)}`;
-}
-
-export function getMonthName(month: number): string {
-  return PERSIAN_MONTHS[month - 1] ?? '';
 }
 
 export const JALALI_MONTHS = PERSIAN_MONTHS;

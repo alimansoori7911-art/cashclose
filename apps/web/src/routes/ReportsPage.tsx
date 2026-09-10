@@ -4,12 +4,11 @@ import { useState } from 'react';
 import { AppLayout } from '../components/layout/AppLayout';
 import { Alert } from '../components/ui/Alert/index';
 import { Button } from '../components/ui/Button/index';
-import { SelectInput } from '../components/ui/SelectInput/index';
-import { TextInput } from '../components/ui/TextInput/index';
-import { useBranches } from '../features/admin/hooks/useAdminData';
 import { BranchChart } from '../features/reports/components/BranchChart';
 import { ForecastCard } from '../features/reports/components/ForecastCard';
+import { ReportFilterBar } from '../features/reports/components/ReportFilterBar';
 import { SalesTrendChart } from '../features/reports/components/SalesTrendChart';
+import { YearComparisonChart } from '../features/reports/components/YearComparisonChart';
 import { StatusTiles } from '../features/reports/components/StatusTiles';
 import { UnsettledTable } from '../features/reports/components/UnsettledTable';
 import {
@@ -19,11 +18,14 @@ import {
 import {
   useBranchComparison,
   useDailySales,
-  useForecast,
   useStatusSummary,
   useUnsettled,
   type ReportFilters,
 } from '../features/reports/hooks/useReports';
+import {
+  useForecast,
+  useYearComparison,
+} from '../features/reports/hooks/useTimeReports';
 
 /** داشبورد گزارش‌های مدیریتی. */
 export function ReportsPage() {
@@ -33,11 +35,12 @@ export function ReportsPage() {
     dateTo: todayIso(),
   });
 
-  const branches = useBranches();
   const daily = useDailySales(filters);
   const branchSales = useBranchComparison(filters);
   const status = useStatusSummary(filters);
   const forecast = useForecast(filters.branchId);
+  // سال جاری؛ hook خودش سال شمسی امروز را از سرور می‌گیرد.
+  const yearComparison = useYearComparison(undefined, filters.branchId);
   const unsettled = useUnsettled(filters);
 
   const hasError =
@@ -73,39 +76,7 @@ export function ReportsPage() {
         </div>
       </div>
 
-      {/* نوار فیلتر — یک ردیف بالای نمودارها. */}
-      <div className="mb-5 grid gap-3 rounded-lg border border-border bg-surface p-4 sm:grid-cols-3">
-        <TextInput
-          label="از تاریخ"
-          type="date"
-          value={filters.dateFrom ?? ''}
-          onChange={(event) =>
-            setFilters({ ...filters, dateFrom: event.target.value || undefined })
-          }
-          ltr
-        />
-        <TextInput
-          label="تا تاریخ"
-          type="date"
-          value={filters.dateTo ?? ''}
-          onChange={(event) =>
-            setFilters({ ...filters, dateTo: event.target.value || undefined })
-          }
-          ltr
-        />
-        <SelectInput
-          label="شعبه"
-          value={filters.branchId ?? ''}
-          onChange={(branchId) =>
-            setFilters({ ...filters, branchId: branchId || undefined })
-          }
-          placeholder="همهٔ شعب"
-          options={(branches.data?.items ?? []).map((branch) => ({
-            value: branch.id,
-            label: branch.name,
-          }))}
-        />
-      </div>
+      <ReportFilterBar filters={filters} onChange={setFilters} />
 
       {hasError && (
         <Alert tone="error" className="mb-4">
@@ -122,6 +93,14 @@ export function ReportsPage() {
           <ChartSkeleton />
         ) : (
           <SalesTrendChart data={daily.data ?? []} />
+        )}
+
+        {yearComparison.isPending ? (
+          <ChartSkeleton />
+        ) : (
+          yearComparison.data && (
+            <YearComparisonChart data={yearComparison.data} />
+          )
         )}
 
         {branchSales.isPending ? (

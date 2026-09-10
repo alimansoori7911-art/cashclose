@@ -54,6 +54,10 @@
     --color-chart: 37 99 235;
     --color-chart-soft: 219 234 254;
     --color-chart-grid: 226 232 240;
+    /* سری دوم — فقط برای مقایسهٔ دوسری (سال جاری در برابر سال قبل).
+       جفت #2563eb/#b45309 آزموده شده: ΔE ۳۱ زیر پروتانوپی، بسیار بالاتر
+       از آستانهٔ ۸. */
+    --color-chart-alt: 180 83 9;
 
     --radius: 0.625rem;
   }
@@ -94,6 +98,8 @@
       --color-chart: 59 130 246;
       --color-chart-soft: 30 58 95;
       --color-chart-grid: 40 56 82;
+      /* کهربای روشن‌تر برای زمینهٔ تیره؛ همان جفت دوباره آزموده شد. */
+      --color-chart-alt: 217 119 6;
     }
   }
 
@@ -125,6 +131,7 @@
     --color-chart: 59 130 246;
     --color-chart-soft: 30 58 95;
     --color-chart-grid: 40 56 82;
+    --color-chart-alt: 217 119 6;
   }
 
   html {

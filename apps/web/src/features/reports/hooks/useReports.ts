@@ -1,20 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
 
 import { api } from '../../../lib/api';
+import { clean, type ReportFilters } from './report-filters';
 
-/** فیلتر مشترک گزارش‌ها. */
-export interface ReportFilters {
-  dateFrom?: string;
-  dateTo?: string;
-  branchId?: string;
-}
-
-/** پارامترهای خالی حذف می‌شوند تا فیلتر بی‌اثر نشود. */
-function clean(filters: ReportFilters): Record<string, string> {
-  return Object.fromEntries(
-    Object.entries(filters).filter(([, value]) => Boolean(value)),
-  ) as Record<string, string>;
-}
+export type { ReportFilters };
 
 export interface DailySales {
   date: string;
@@ -61,47 +50,6 @@ export function useStatusSummary(filters: ReportFilters) {
   });
 }
 
-export interface Forecast {
-  year: number;
-  month: number;
-  salesToDate: number;
-  dailyAverage: number;
-  projectedTotal: number;
-  daysElapsed: number;
-  daysInMonth: number;
-  daysRemaining: number;
-  isComplete: boolean;
-  previousYear: { year: number; sales: number; registerCount: number };
-  growthPercent: number | null;
-  registerCount: number;
-}
-
-export function useForecast(branchId?: string) {
-  return useQuery({
-    queryKey: ['reports', 'forecast', branchId],
-    queryFn: () =>
-      api.get<Forecast>(
-        '/reports/monthly-forecast',
-        branchId ? { branchId } : undefined,
-      ),
-  });
-}
-
-export interface MonthlyTrend {
-  year: number;
-  months: { month: number; sales: number; registerCount: number }[];
-}
-
-export function useMonthlyTrend(branchId?: string) {
-  return useQuery({
-    queryKey: ['reports', 'trend', branchId],
-    queryFn: () =>
-      api.get<MonthlyTrend>(
-        '/reports/monthly-trend',
-        branchId ? { branchId } : undefined,
-      ),
-  });
-}
 
 export interface UnsettledReport {
   total: number;

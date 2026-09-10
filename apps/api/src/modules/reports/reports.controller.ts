@@ -12,6 +12,7 @@ import { OverviewService } from './services/overview.service';
 import { ProblematicService } from './services/problematic.service';
 import { SalesReportService } from './services/sales-report.service';
 import { UnsettledService } from './services/unsettled.service';
+import { YearComparisonService } from './services/year-comparison.service';
 
 /**
  * گزارش‌های مدیریتی.
@@ -31,6 +32,7 @@ export class ReportsController {
     private readonly problematicRegisters: ProblematicService,
     private readonly unsettledPurchases: UnsettledService,
     private readonly forecast: ForecastService,
+    private readonly comparison: YearComparisonService,
   ) {}
 
   @Get('daily-sales')
@@ -95,6 +97,21 @@ export class ReportsController {
     const currentYear = isoToJalali(todayIso()).jy;
 
     return this.forecast.monthlyTrend(
+      tenantId,
+      query.year ?? currentYear,
+      query.branchId,
+    );
+  }
+
+  @Get('year-comparison')
+  @ApiOperation({ summary: 'مقایسهٔ نظیربه‌نظیر ۱۲ ماه با سال قبل' })
+  yearComparison(
+    @TenantId() tenantId: string,
+    @Query() query: MonthlyReportDto,
+  ) {
+    const currentYear = isoToJalali(todayIso()).jy;
+
+    return this.comparison.compare(
       tenantId,
       query.year ?? currentYear,
       query.branchId,

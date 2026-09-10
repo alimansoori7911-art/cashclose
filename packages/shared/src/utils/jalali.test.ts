@@ -2,13 +2,16 @@ import { describe, expect, it } from 'vitest';
 
 import {
   addDaysIso,
-  formatJalali,
-  formatJalaliCompact,
   isoToJalali,
   jalaliMonthRange,
   jalaliToIso,
   toIsoDate,
 } from './jalali.js';
+import {
+  formatJalali,
+  formatJalaliCompact,
+  formatYear,
+} from './jalali-format.js';
 
 describe('تبدیل تاریخ جلالی', () => {
   it('نوروز ۱۴۰۵ را درست تبدیل می‌کند', () => {
@@ -62,5 +65,13 @@ describe('محاسبات روی تاریخ', () => {
   it('اسفند سال کبیسهٔ شمسی را ۳۰ روزه می‌گیرد', () => {
     // ۱۴۰۳ سال کبیسهٔ شمسی است.
     expect(formatJalali(jalaliMonthRange(1403, 12).to)).toBe('1403/12/30');
+  });
+});
+
+describe('نمایش سال', () => {
+  it('سال بدون جداکنندهٔ هزارگان نمایش داده می‌شود', () => {
+    // «۱٬۴۰۵» غلط خوانده می‌شود: سال شناسه است نه مقدار.
+    expect(formatYear(1405)).toBe('۱۴۰۵');
+    expect(formatYear(1404)).toBe('۱۴۰۴');
   });
 });

@@ -1,6 +1,6 @@
-import { formatMoney, getMonthName } from '@cashclose/shared';
+import { formatMoney, formatYear, getMonthName } from '@cashclose/shared';
 
-import type { Forecast } from '../hooks/useReports';
+import type { Forecast } from '../hooks/useTimeReports';
 
 /**
  * پیش‌بینی فروش ماه (بند ۷ و ۸ سند).
@@ -16,7 +16,7 @@ export function ForecastCard({ data }: { data: Forecast }) {
     <div className="rounded-lg border border-border bg-surface p-5">
       <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
         <h3 className="text-sm font-semibold text-text">
-          پیش‌بینی فروش {getMonthName(data.month)} {data.year.toLocaleString('fa-IR', { useGrouping: false })}
+          پیش‌بینی فروش {getMonthName(data.month)} {formatYear(data.year)}
         </h3>
 
         {data.growthPercent !== null && (
@@ -54,7 +54,7 @@ export function ForecastCard({ data }: { data: Forecast }) {
         <Item label="فروش تا امروز" value={formatMoney(data.salesToDate)} />
         <Item label="میانگین روزانه" value={formatMoney(data.dailyAverage)} />
         <Item
-          label={`فروش ${data.previousYear.year.toLocaleString('fa-IR', { useGrouping: false })}`}
+          label={`فروش ${formatYear(data.previousYear.year)}`}
           value={
             data.previousYear.sales > 0
               ? formatMoney(data.previousYear.sales)
@@ -94,7 +94,7 @@ function GrowthBadge({ percent, year }: { percent: number; year: number }) {
       <span aria-hidden>{isUp ? '▲' : '▼'}</span>
       {isUp ? 'رشد' : 'کاهش'} {Math.abs(percent).toLocaleString('fa-IR')}٪
       <span className="text-text-muted">
-        نسبت به {year.toLocaleString('fa-IR', { useGrouping: false })}
+        نسبت به {formatYear(year)}
       </span>
     </span>
   );

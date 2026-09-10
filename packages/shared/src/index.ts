@@ -13,3 +13,4 @@ export * from './domain/roles.js';
 export * from './domain/register-limits.js';
 export * from './utils/money.js';
 export * from './utils/jalali.js';
+export * from './utils/jalali-format.js';

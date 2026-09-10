@@ -58,6 +58,7 @@ export default {
           DEFAULT: token('--color-chart'),
           soft: token('--color-chart-soft'),
           grid: token('--color-chart-grid'),
+          alt: token('--color-chart-alt'),
         },
       },
       borderRadius: {
