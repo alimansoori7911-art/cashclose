@@ -1,4 +1,9 @@
-import { FormulaSide, getTypesBySide, TransactionType } from '@cashclose/shared';
+import {
+  FormulaSide,
+  getTypesBySide,
+  TransactionType,
+  type CashCalculationResult,
+} from '@cashclose/shared';
 import { useMemo, useState } from 'react';
 
 import type { FormRow } from '../hooks/useRegisterForm';
@@ -7,7 +12,9 @@ import { TerminalBreakdownModal } from './TerminalBreakdownModal';
 
 interface Props {
   rows: FormRow[];
+  calculation: CashCalculationResult;
   readOnly: boolean;
+  previousByType: Map<string, number>;
   onUpdate: (
     key: string,
     patch: Partial<Omit<FormRow, 'key' | 'type'>>,
@@ -24,7 +31,9 @@ interface Props {
  */
 export function RegisterForm({
   rows,
+  calculation,
   readOnly,
+  previousByType,
   onUpdate,
   onAddRow,
   onRemoveRow,
@@ -65,6 +74,7 @@ export function RegisterForm({
   const shared = {
     rows,
     readOnly,
+    previousByType,
     onUpdate,
     onAddRow,
     onRemoveRow,
@@ -77,12 +87,16 @@ export function RegisterForm({
         <FormColumn
           title="مانده صندوق"
           hint="محاسبه از سیستم حسابداری"
+          total={Number(calculation.registerBalance)}
+          tone="balance"
           types={balanceTypes}
           {...shared}
         />
         <FormColumn
           title="جمع اسناد"
           hint="پول و اسناد واقعی صندوق"
+          total={Number(calculation.documentsTotal)}
+          tone="documents"
           types={documentTypes.map((d) => d.type)}
           {...shared}
         />

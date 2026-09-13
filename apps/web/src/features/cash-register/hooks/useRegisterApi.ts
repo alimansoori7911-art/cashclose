@@ -122,3 +122,17 @@ export function useCloseRegister(id: string | undefined) {
       queryClient.invalidateQueries({ queryKey: ['cash-register'] }),
   });
 }
+
+/** اقلام صندوق قبلی — برای راهنمای رفع اختلاف. */
+export function usePreviousTransactions(id: string | undefined) {
+  return useQuery({
+    queryKey: ['cash-register', id, 'previous'],
+    queryFn: () =>
+      api.get<{ type: string; amount: number }[]>(
+        `/cash-registers/${id}/previous-transactions`,
+      ),
+    enabled: Boolean(id),
+    // صندوق قبلی بسته شده و دیگر تغییر نمی‌کند؛ واکشی دوباره بی‌فایده است.
+    staleTime: Infinity,
+  });
+}

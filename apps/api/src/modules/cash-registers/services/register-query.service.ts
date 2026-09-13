@@ -81,4 +81,36 @@ export class RegisterQueryService {
       orderBy: { businessDate: 'desc' },
     });
   }
+
+  /**
+   * اقلام صندوق قبلیِ همین صندوقدار.
+   *
+   * برای راهنمای رفع اختلاف: قلمی که دیروز مبلغ داشت و امروز خالی است،
+   * شایع‌ترین نشانهٔ «فراموش‌کردن یک دستگاه» است. فقط جمع هر نوع لازم
+   * است، نه جزئیات.
+   */
+  async findPreviousTransactions(actor: RequestUser, beforeId: string) {
+    const current = await this.prisma.cashRegister.findFirst({
+      where: { id: beforeId, tenantId: actor.tenantId },
+      select: { businessDate: true, cashierId: true },
+    });
+
+    if (!current) return [];
+
+    const previous = await this.prisma.cashRegister.findFirst({
+      where: {
+        tenantId: actor.tenantId,
+        cashierId: current.cashierId,
+        businessDate: { lt: current.businessDate },
+      },
+      select: {
+        transactions: {
+          select: { type: true, amount: true },
+        },
+      },
+      orderBy: { businessDate: 'desc' },
+    });
+
+    return previous?.transactions ?? [];
+  }
 }

@@ -1,93 +1,125 @@
-import { getTransactionType, TransactionType } from '@cashclose/shared';
+import {
+  formatMoney,
+  isPrimaryType,
+  TransactionType,
+} from '@cashclose/shared';
+import { useState } from 'react';
 
 import type { FormRow } from '../hooks/useRegisterForm';
-import { TerminalSummaryCard } from './TerminalSummaryCard';
-import { TransactionRow } from './TransactionRow';
+import { SecondaryToggle } from './SecondaryToggle';
+import { TypeGroup } from './TypeGroup';
 
 interface Props {
   title: string;
   hint: string;
+  total: number;
+  tone: 'balance' | 'documents';
   types: TransactionType[];
   rows: FormRow[];
   readOnly: boolean;
+  /** جمع هر قلم در صندوق قبلی — برای مقایسه. */
+  previousByType: Map<string, number>;
   onUpdate: (key: string, patch: Partial<Omit<FormRow, 'key' | 'type'>>) => void;
   onAddRow: (type: TransactionType) => void;
   onRemoveRow: (key: string) => void;
   onOpenBreakdown: (type: TransactionType) => void;
 }
 
-/** یک ستون فرم صندوق — مانده صندوق یا جمع اسناد. */
+/**
+ * یک ستون فرم صندوق — مانده صندوق یا جمع اسناد.
+ *
+ * اقلام پرکاربرد همیشه بازند و نادرها پشت یک بازکننده. اندازه‌گیری روی
+ * صندوق‌های واقعی نشان داد چهار قلم در ۹۷٪ صندوق‌ها پر می‌شوند و بقیه
+ * تقریباً هیچ‌وقت؛ نمایش هم‌وزن همه یعنی صندوقدار هر روز از میان چیزهایی
+ * رد می‌شود که به کارش نمی‌آید.
+ */
 export function FormColumn({
   title,
   hint,
+  total,
+  tone,
   types,
   rows,
   readOnly,
+  previousByType,
   onUpdate,
   onAddRow,
   onRemoveRow,
   onOpenBreakdown,
 }: Props) {
+  const primary = types.filter(isPrimaryType);
+  const secondary = types.filter((type) => !isPrimaryType(type));
+
+  // قلمی که مبلغ دارد نباید پنهان بماند؛ صندوقدار باید چیزی را که پر
+  // کرده ببیند.
+  const secondaryFilled = secondary.some((type) =>
+    rows.some((row) => row.type === type && (row.amount ?? 0) > 0),
+  );
+  const [expanded, setExpanded] = useState(false);
+  const showSecondary = expanded || secondaryFilled;
+
+  const shared = {
+    rows,
+    readOnly,
+    onUpdate,
+    onAddRow,
+    onRemoveRow,
+    onOpenBreakdown,
+  };
+
   return (
     <section>
-      <div className="mb-3 flex items-baseline justify-between border-b-2 border-border pb-2">
+      <div className="mb-3 flex items-baseline justify-between gap-2 border-b-2 border-border pb-2">
         <h2 className="text-sm font-semibold text-text">
           {title}
           <span className="mr-2 text-xs font-normal text-text-muted">
             — {hint}
           </span>
         </h2>
+        <span
+          className={[
+            'financial-figure shrink-0 text-base font-semibold',
+            tone === 'balance' ? 'text-surplus' : 'text-balanced',
+          ].join(' ')}
+        >
+          {formatMoney(total)}
+        </span>
       </div>
 
       <div className="flex flex-col gap-2.5">
-        {types.map((type) => {
-          const definition = getTransactionType(type);
-          const typeRows = rows.filter((row) => row.type === type);
+        {primary.map((type) => (
+          <TypeGroup
+            key={type}
+            type={type}
+            previousAmount={previousByType.get(type)}
+            {...shared}
+          />
+        ))}
+      </div>
 
-          // اقلام تفکیک‌شده به دستگاه فقط جمع را نشان می‌دهند؛ ریز آن‌ها
-          // در مدال است تا ستون اصلی شلوغ نشود.
-          if (definition.needsTerminal) {
-            return (
-              <TerminalSummaryCard
-                key={type}
-                rows={rows}
-                type={type}
-                onOpen={() => onOpenBreakdown(type)}
-              />
-            );
-          }
+      {secondary.length > 0 && (
+        <div className="mt-3">
+          <SecondaryToggle
+            count={secondary.length}
+            expanded={showSecondary}
+            hasValue={secondaryFilled}
+            onToggle={() => setExpanded((value) => !value)}
+          />
 
-          return (
-            <div key={type} className="flex flex-col gap-2">
-              {typeRows.map((row) => (
-                <TransactionRow
-                  key={row.key}
-                  row={row}
-                  disabled={readOnly}
-                  onChange={(patch) => onUpdate(row.key, patch)}
-                  onRemove={
-                    // ردیف اول هر قلم حذف نمی‌شود تا فرم همیشه کامل بماند؛
-                    // ردیف‌های اضافه (مثلاً چک دوم) قابل حذف‌اند.
-                    typeRows.length > 1
-                      ? () => onRemoveRow(row.key)
-                      : undefined
-                  }
+          {showSecondary && (
+            <div className="mt-2.5 flex flex-col gap-2.5">
+              {secondary.map((type) => (
+                <TypeGroup
+                  key={type}
+                  type={type}
+                  previousAmount={previousByType.get(type)}
+                  {...shared}
                 />
               ))}
-
-              {!readOnly && definition.isMultiRow && (
-                <button
-                  type="button"
-                  onClick={() => onAddRow(type)}
-                  className="self-start rounded px-2 py-1 text-xs text-primary transition-colors hover:bg-primary-soft"
-                >
-                  + افزودن ردیف
-                </button>
-              )}
             </div>
-          );
-        })}
-      </div>
+          )}
+        </div>
+      )}
     </section>
   );
 }

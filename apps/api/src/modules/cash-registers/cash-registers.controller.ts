@@ -59,6 +59,15 @@ export class CashRegistersController {
     return this.query.findOne(user, id);
   }
 
+  @Get(':id/previous-transactions')
+  @ApiOperation({ summary: 'اقلام صندوق قبلی — برای راهنمای رفع اختلاف' })
+  previousTransactions(
+    @CurrentUser() user: RequestUser,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.query.findPreviousTransactions(user, id);
+  }
+
   @Post()
   @Roles(UserRole.cashier)
   @ApiOperation({ summary: 'ایجاد صندوق روزانه' })

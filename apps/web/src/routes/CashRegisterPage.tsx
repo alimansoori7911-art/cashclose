@@ -1,10 +1,9 @@
 import type { CashRegisterStatus } from '@cashclose/shared';
-import { useState } from 'react';
 
 import { AppLayout } from '../components/layout/AppLayout';
 import { CompletenessModal } from '../features/cash-register/components/CompletenessModal';
 import { NoRegisterState } from '../features/cash-register/components/NoRegisterState';
-import { RegisterForm } from '../features/cash-register/components/RegisterForm';
+import { RegisterBody } from '../features/cash-register/components/RegisterBody';
 import { RegisterHeader } from '../features/cash-register/components/RegisterHeader';
 import { SummaryBar } from '../features/cash-register/components/SummaryBar';
 import {
@@ -12,20 +11,21 @@ import {
   useUnsavedWarning,
 } from '../features/cash-register/hooks/useAutoSave';
 import { useCloseFlow } from '../features/cash-register/hooks/useCloseFlow';
+import { useDifferenceHelp } from '../features/cash-register/hooks/useDifferenceHelp';
+import { useCreateFlow } from '../features/cash-register/hooks/useCreateFlow';
 import { useDraftSaver } from '../features/cash-register/hooks/useDraftSaver';
+import { useShortcuts } from '../features/cash-register/hooks/useShortcuts';
 import { useLoadedRegisterForm } from '../features/cash-register/hooks/useLoadedRegisterForm';
 import {
   useCloseRegister,
-  useCreateRegister,
   useCurrentRegister,
+  usePreviousTransactions,
   useRegisterDetail,
 } from '../features/cash-register/hooks/useRegisterApi';
-import { ApiError } from '../lib/api';
 
 /** صفحهٔ ثبت و بستن صندوق روزانه. */
 export function CashRegisterPage() {
   const current = useCurrentRegister();
-  const createRegister = useCreateRegister();
   const registerId = current.data?.id;
 
   const detail = useRegisterDetail(registerId);
@@ -33,7 +33,13 @@ export function CashRegisterPage() {
   const form = useLoadedRegisterForm(detail.data);
   const draft = useDraftSaver(registerId, form);
 
-  const [createError, setCreateError] = useState<string | null>(null);
+  const createFlow = useCreateFlow();
+  const previous = usePreviousTransactions(registerId);
+  const help = useDifferenceHelp(
+    form.rows,
+    Number(form.calculation.difference),
+    previous.data,
+  );
   const closeFlow = useCloseFlow({
     rows: form.rows,
     draft,
@@ -55,6 +61,10 @@ export function CashRegisterPage() {
     onSave: () => void draft.saveDraft().catch(() => undefined),
   });
   useUnsavedWarning(form.isDirty && !readOnly);
+  useShortcuts({
+    enabled: Boolean(registerId) && !readOnly,
+    onSave: () => void draft.saveDraft().catch(() => undefined),
+  });
 
   if (current.isPending) {
     return (
@@ -68,20 +78,9 @@ export function CashRegisterPage() {
     return (
       <AppLayout>
         <NoRegisterState
-          creating={createRegister.isPending}
-          error={createError}
-          onCreate={async (options) => {
-            setCreateError(null);
-            try {
-              await createRegister.mutateAsync(options);
-            } catch (err) {
-              setCreateError(
-                err instanceof ApiError
-                  ? err.displayMessage
-                  : 'ایجاد صندوق ناموفق بود.',
-              );
-            }
-          }}
+          creating={createFlow.creating}
+          error={createFlow.error}
+          onCreate={(options) => void createFlow.create(options)}
         />
       </AppLayout>
     );
@@ -99,9 +98,13 @@ export function CashRegisterPage() {
         notice={draft.notice}
       />
 
-      <RegisterForm
+      <RegisterBody
         rows={form.rows}
+        calculation={form.calculation}
         readOnly={readOnly}
+        previousByType={help.previousByType}
+        suggestions={help.suggestions}
+        anomalies={help.anomalies}
         onUpdate={form.update}
         onAddRow={form.addRow}
         onRemoveRow={form.removeRow}
