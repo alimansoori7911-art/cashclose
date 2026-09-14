@@ -14,10 +14,13 @@ interface Props {
   calculation: CashCalculationResult;
   readOnly: boolean;
   previousByType: Map<string, number>;
+  focusTarget: string | null;
   suggestions: TypeHint[];
   anomalies: AnomalyHint[];
   onUpdate: (key: string, patch: Partial<Omit<FormRow, 'key' | 'type'>>) => void;
   onAddRow: (type: TransactionType) => void;
+  /** انتخاب یک پیشنهاد — ردیف موجود را پیدا و فوکوس می‌کند. */
+  onSuggestionPick: (type: TransactionType) => void;
   onRemoveRow: (key: string) => void;
 }
 
@@ -31,10 +34,12 @@ export function RegisterBody({
   calculation,
   readOnly,
   previousByType,
+  focusTarget,
   suggestions,
   anomalies,
   onUpdate,
   onAddRow,
+  onSuggestionPick,
   onRemoveRow,
 }: Props) {
   return (
@@ -48,6 +53,7 @@ export function RegisterBody({
         calculation={calculation}
         readOnly={readOnly}
         previousByType={previousByType}
+        focusTarget={focusTarget}
         onUpdate={onUpdate}
         onAddRow={onAddRow}
         onRemoveRow={onRemoveRow}
@@ -62,7 +68,7 @@ export function RegisterBody({
             difference={Number(calculation.difference)}
             suggestions={suggestions}
             anomalies={anomalies}
-            onAddRow={onAddRow}
+            onAddRow={onSuggestionPick}
           />
         </>
       )}

@@ -31,7 +31,11 @@ export function TransactionRow({ row, disabled, onChange, onRemove }: Props) {
     row.description.trim() === '';
 
   return (
-    <div className="rounded-lg border border-border bg-surface p-3">
+    // لنگر برای هدایت از دکمهٔ پیشنهاد به همین ردیف.
+    <div
+      data-row-key={row.key}
+      className="rounded-lg border border-border bg-surface p-3"
+    >
       <div className="flex items-center justify-between gap-3">
         <label
           className="flex-1 text-sm font-medium text-text"

@@ -15,6 +15,7 @@ interface Props {
   calculation: CashCalculationResult;
   readOnly: boolean;
   previousByType: Map<string, number>;
+  focusTarget: string | null;
   onUpdate: (
     key: string,
     patch: Partial<Omit<FormRow, 'key' | 'type'>>,
@@ -34,6 +35,7 @@ export function RegisterForm({
   calculation,
   readOnly,
   previousByType,
+  focusTarget,
   onUpdate,
   onAddRow,
   onRemoveRow,
@@ -75,6 +77,7 @@ export function RegisterForm({
     rows,
     readOnly,
     previousByType,
+    focusTarget,
     onUpdate,
     onAddRow,
     onRemoveRow,

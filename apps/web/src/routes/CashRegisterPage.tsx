@@ -14,6 +14,7 @@ import { useCloseFlow } from '../features/cash-register/hooks/useCloseFlow';
 import { useDifferenceHelp } from '../features/cash-register/hooks/useDifferenceHelp';
 import { useCreateFlow } from '../features/cash-register/hooks/useCreateFlow';
 import { useDraftSaver } from '../features/cash-register/hooks/useDraftSaver';
+import { useFocusRow } from '../features/cash-register/hooks/useFocusRow';
 import { useShortcuts } from '../features/cash-register/hooks/useShortcuts';
 import { useLoadedRegisterForm } from '../features/cash-register/hooks/useLoadedRegisterForm';
 import {
@@ -34,6 +35,7 @@ export function CashRegisterPage() {
   const draft = useDraftSaver(registerId, form);
 
   const createFlow = useCreateFlow();
+  const focus = useFocusRow();
   const previous = usePreviousTransactions(registerId);
   const help = useDifferenceHelp(
     form.rows,
@@ -103,10 +105,12 @@ export function CashRegisterPage() {
         calculation={form.calculation}
         readOnly={readOnly}
         previousByType={help.previousByType}
+        focusTarget={focus.target}
         suggestions={help.suggestions}
         anomalies={help.anomalies}
         onUpdate={form.update}
         onAddRow={form.addRow}
+        onSuggestionPick={(type) => focus.focusRow(form.ensureRow(type))}
         onRemoveRow={form.removeRow}
       />
 

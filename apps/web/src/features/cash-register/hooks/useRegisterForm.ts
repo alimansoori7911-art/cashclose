@@ -7,10 +7,20 @@ import { useCallback, useMemo, useState } from 'react';
 
 import {
   assignSavedIds,
-  mergeImages,
   rowsToPayload,
   type SavedTransaction,
 } from './row-identity';
+import {
+  createRow,
+  findOrCreateEmpty,
+  mergeImages,
+  patchRow,
+  type FormRow,
+  type RowImage,
+} from './row-operations';
+
+export { createRow };
+export type { FormRow, RowImage };
 
 /**
  * وضعیت فرم صندوق و محاسبهٔ زندهٔ اختلاف.
@@ -20,57 +30,13 @@ import {
  * سرور هنگام بستن صندوق بررسی می‌کند.
  */
 
-/** یک تصویر پیوست‌شده به ردیف. */
-export interface RowImage {
-  id: string;
-  originalName: string;
-  mimeType: string;
-  sizeBytes: number;
-}
-
-/** یک ردیف در فرم؛ `key` فقط برای React است و به سرور نمی‌رود. */
-export interface FormRow {
-  key: string;
-  /** شناسهٔ رکورد در دیتابیس؛ تا اولین ذخیره `null` است. */
-  id: string | null;
-  type: TransactionType;
-  amount: number | null;
-  description: string;
-  terminalId: string | null;
-  images: RowImage[];
-}
-
-let rowCounter = 0;
-function nextKey(): string {
-  rowCounter += 1;
-  return `row-${rowCounter}`;
-}
-
-export function createRow(
-  type: TransactionType,
-  overrides: Partial<FormRow> = {},
-): FormRow {
-  return {
-    key: nextKey(),
-    id: null,
-    type,
-    amount: null,
-    description: '',
-    terminalId: null,
-    images: [],
-    ...overrides,
-  };
-}
-
 export function useRegisterForm(initialRows: FormRow[] = []) {
   const [rows, setRows] = useState<FormRow[]>(initialRows);
   const [isDirty, setDirty] = useState(false);
 
   const update = useCallback(
     (key: string, patch: Partial<Omit<FormRow, 'key' | 'type'>>) => {
-      setRows((current) =>
-        current.map((row) => (row.key === key ? { ...row, ...patch } : row)),
-      );
+      setRows((current) => patchRow(current, key, patch));
       setDirty(true);
     },
     [],
@@ -84,6 +50,18 @@ export function useRegisterForm(initialRows: FormRow[] = []) {
   const removeRow = useCallback((key: string) => {
     setRows((current) => current.filter((row) => row.key !== key));
     setDirty(true);
+  }, []);
+
+  const ensureRow = useCallback((type: TransactionType): string => {
+    let key = '';
+
+    setRows((current) => {
+      const result = findOrCreateEmpty(current, type);
+      key = result.key;
+      return result.rows;
+    });
+
+    return key;
   }, []);
 
   const replaceAll = useCallback((next: FormRow[]) => {
@@ -110,7 +88,7 @@ export function useRegisterForm(initialRows: FormRow[] = []) {
    * می‌شد. اینجا فقط `images` جایگزین می‌شود.
    */
   const syncImages = useCallback((byRowId: Map<string, RowImage[]>) => {
-    setRows((current) => mergeImages(current, byRowId));
+    setRows((current) => mergeImages(current, byRowId) ?? current);
   }, []);
 
   /** نتیجهٔ محاسبه — با هر تغییر ردیف‌ها دوباره حساب می‌شود. */
@@ -132,6 +110,7 @@ export function useRegisterForm(initialRows: FormRow[] = []) {
     setDirty,
     update,
     addRow,
+    ensureRow,
     removeRow,
     replaceAll,
     applySavedIds,

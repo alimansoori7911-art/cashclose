@@ -19,6 +19,8 @@ interface Props {
   readOnly: boolean;
   /** جمع هر قلم در صندوق قبلی — برای مقایسه. */
   previousByType: Map<string, number>;
+  /** کلید ردیفی که باید دیده شود — بخش جمع‌شده برایش باز می‌ماند. */
+  focusTarget: string | null;
   onUpdate: (key: string, patch: Partial<Omit<FormRow, 'key' | 'type'>>) => void;
   onAddRow: (type: TransactionType) => void;
   onRemoveRow: (key: string) => void;
@@ -42,6 +44,7 @@ export function FormColumn({
   rows,
   readOnly,
   previousByType,
+  focusTarget,
   onUpdate,
   onAddRow,
   onRemoveRow,
@@ -55,8 +58,14 @@ export function FormColumn({
   const secondaryFilled = secondary.some((type) =>
     rows.some((row) => row.type === type && (row.amount ?? 0) > 0),
   );
+  // ردیف هدف اگر در بخش جمع‌شده باشد، آن بخش باید باز شود؛ وگرنه
+  // دکمهٔ پیشنهاد کاربر را به جایی می‌فرستد که دیده نمی‌شود.
+  const targetInSecondary = secondary.some((type) =>
+    rows.some((row) => row.key === focusTarget && row.type === type),
+  );
+
   const [expanded, setExpanded] = useState(false);
-  const showSecondary = expanded || secondaryFilled;
+  const showSecondary = expanded || secondaryFilled || targetInSecondary;
 
   const shared = {
     rows,
