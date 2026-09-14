@@ -7,6 +7,20 @@ import { ApiError } from '../../../lib/api';
 import { useAuth } from '../hooks/useAuth';
 
 /**
+ * آیا آدرس فعلی زیردامنهٔ یک مشتری است؟
+ *
+ * `rafah.cashclose.ir` → بله | `cashclose.ir` یا آی‌پی خام → خیر
+ */
+function hasSubdomain(): boolean {
+  const host = window.location.hostname;
+
+  // آی‌پی خام زیردامنه ندارد.
+  if (/^\d+\.\d+\.\d+\.\d+$/.test(host)) return false;
+
+  return host.split('.').length >= 3;
+}
+
+/**
  * فرم ورود.
  *
  * پیام خطا عمداً کلی است («نام کاربری یا رمز عبور اشتباه است») و بین
@@ -21,9 +35,15 @@ export function LoginForm({ onSuccess }: { onSuccess?: () => void }) {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // فیلد مجموعه تا وقتی لازم نشده پنهان است: اکثر فروشگاه‌ها یک مجموعه
-  // بیشتر ندارند و نمایش همیشگی‌اش فقط فرم را پیچیده می‌کند.
-  const [needsTenant, setNeedsTenant] = useState(false);
+  /**
+   * آیا کد کسب‌وکار لازم است؟
+   *
+   * اگر سامانه از زیردامنهٔ اختصاصی مشتری باز شده باشد (`rafah.…`)،
+   * آدرس خودش مجموعه را مشخص می‌کند و پرسیدن کد فقط مزاحمت است. در
+   * آدرس مشترک — که حالت رایج است — کد از همان ابتدا خواسته می‌شود تا
+   * کاربر اول خطا نگیرد و بعد کد بخواهد.
+   */
+  const [needsTenant, setNeedsTenant] = useState(() => !hasSubdomain());
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -67,6 +87,18 @@ export function LoginForm({ onSuccess }: { onSuccess?: () => void }) {
     <form onSubmit={handleSubmit} className="flex flex-col gap-4" noValidate>
       {error && <Alert tone="error">{error}</Alert>}
 
+      {needsTenant && (
+        <TextInput
+          label="کد کسب‌وکار"
+          value={businessCode}
+          onChange={(event) => setBusinessCode(event.target.value)}
+          hint="کد هشت‌نویسه‌ای که هنگام ثبت‌نام دریافت کرده‌اید."
+          required
+          ltr
+          disabled={loading}
+        />
+      )}
+
       <TextInput
         label="نام کاربری"
         value={username}
@@ -88,22 +120,6 @@ export function LoginForm({ onSuccess }: { onSuccess?: () => void }) {
         ltr
         disabled={loading}
       />
-
-      {needsTenant && (
-        // در استقرار واقعی هر مشتری زیردامنهٔ خودش را دارد و این فیلد
-        // هرگز ظاهر نمی‌شود. فقط وقتی سامانه از آدرس بدون زیردامنه
-        // (توسعه یا آی‌پی خام) باز شود به آن نیاز می‌افتد.
-        <TextInput
-          label="کد کسب‌وکار"
-          value={businessCode}
-          onChange={(event) => setBusinessCode(event.target.value)}
-          hint="کد هشت‌نویسه‌ای که هنگام ثبت‌نام دریافت کرده‌اید."
-          required
-          autoFocus
-          ltr
-          disabled={loading}
-        />
-      )}
 
       <Button type="submit" loading={loading} fullWidth>
         ورود
