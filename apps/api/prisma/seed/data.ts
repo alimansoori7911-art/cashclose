@@ -17,6 +17,8 @@ export const TENANT = {
   name: 'فروشگاه رهاوی',
   /** زیردامنهٔ اختصاصی: `rahavi.cashclose.ir` */
   slug: 'rahavi',
+  /** کد کسب‌وکار — چیزی که پای تلفن خوانده می‌شود. */
+  code: 'RAHAVI01',
 } as const;
 
 export const STORE = {

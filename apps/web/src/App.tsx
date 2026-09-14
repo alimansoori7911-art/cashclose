@@ -18,6 +18,15 @@ import { LoginPage } from './routes/LoginPage';
  * حجم برنامه است. صندوقدار — پرکاربرترین نقش — هرگز این صفحه را باز
  * نمی‌کند، پس نباید هزینهٔ دانلودش را بدهد.
  */
+/**
+ * پنل مدیر سامانه — بیرون از `RequireAuth`.
+ *
+ * آن محافظ نشستِ کاربرِ مشتری را می‌خواهد و مدیر سامانه کاربر هیچ
+ * مجموعه‌ای نیست؛ نشست و صفحهٔ ورود خودش را دارد.
+ */
+const PlatformPage = lazy(() =>
+  import('./routes/PlatformPage').then((m) => ({ default: m.PlatformPage })),
+);
 const ReportsPage = lazy(() =>
   import('./routes/ReportsPage').then((m) => ({ default: m.ReportsPage })),
 );
@@ -48,6 +57,7 @@ export function App() {
               </RedirectIfAuthenticated>
             }
           />
+          <Route path="/platform" element={<PlatformPage />} />
           <Route
             path="/"
             element={

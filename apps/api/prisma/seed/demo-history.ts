@@ -11,6 +11,7 @@
 
 import { PrismaClient } from '@prisma/client';
 
+import { BRANCHES } from './data';
 import { createRegister, type SeedContext } from './demo-register';
 
 const prisma = new PrismaClient();
@@ -31,14 +32,29 @@ async function loadContext(): Promise<SeedContext> {
   const tenant = await prisma.tenant.findFirst({ select: { id: true } });
   if (!tenant) throw new Error('ابتدا دادهٔ نمونه را بسازید (npm run db:seed).');
 
+  /**
+   * شعبه‌ها با شناسهٔ ثابتِ seed انتخاب می‌شوند، نه «دو تای اول».
+   *
+   * پیش‌تر `take: 2` بدون ترتیب بود و اگر شعبهٔ آزمایشیِ تست زودتر ساخته
+   * شده بود، صدها صندوق نمونه روی همان می‌نشست — داده‌ای که بعداً
+   * نمی‌شد بدون از دست دادنش پاک‌سازی کرد.
+   */
   const branches = await prisma.branch.findMany({
-    where: { tenantId: tenant.id, isActive: true },
+    where: {
+      tenantId: tenant.id,
+      isActive: true,
+      id: { in: BRANCHES.map((branch) => branch.id) },
+    },
     select: { id: true, name: true },
-    take: 2,
   });
 
   const cashiers = await prisma.user.findMany({
-    where: { tenantId: tenant.id, role: 'cashier' },
+    where: {
+      tenantId: tenant.id,
+      role: 'cashier',
+      // فقط صندوقدارِ همین شعبه‌ها؛ صندوقدار تست نباید صاحب داده شود.
+      branchId: { in: branches.map((branch) => branch.id) },
+    },
     select: { id: true, branchId: true },
   });
 

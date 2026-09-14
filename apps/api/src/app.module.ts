@@ -17,6 +17,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
 import { ReportsModule } from './modules/reports/reports.module';
 import { ReviewModule } from './modules/review/review.module';
 import { StorageModule } from './common/storage/storage.module';
+import { PlatformModule } from './modules/platform/platform.module';
 import { UploadsModule } from './modules/uploads/uploads.module';
 import { HealthModule } from './modules/health/health.module';
 import { PosTerminalsModule } from './modules/pos-terminals/pos-terminals.module';
@@ -57,6 +58,7 @@ import { validateEnv } from './config/env.validation';
     ReportsModule,
     NotificationsModule,
     UploadsModule,
+    PlatformModule,
     AuditLogsModule,
     HealthModule,
   ],

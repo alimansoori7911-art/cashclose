@@ -31,7 +31,12 @@ async function seed() {
   const tenant = await prisma.tenant.upsert({
     where: { id: TENANT.id },
     update: {},
-    create: { id: TENANT.id, name: TENANT.name, slug: TENANT.slug },
+    create: {
+      id: TENANT.id,
+      name: TENANT.name,
+      slug: TENANT.slug,
+      code: TENANT.code,
+    },
   });
 
   await prisma.store.upsert({

@@ -24,6 +24,30 @@ enum TenantStatus {
   suspended
 }
 
+/// مدیر سامانه — سازندهٔ محصول، نه مشتری.
+///
+/// عمداً جدول جدا از `User` است و هیچ `tenantId` ندارد. اگر داخل همان
+/// جدول می‌آمد، ناچار بودیم `tenantId` را اختیاری کنیم و همان ستون،
+/// پایهٔ جداسازی دادهٔ همهٔ مشتریان است؛ سست‌کردنش یعنی بازکردن راهی که
+/// ممکن است روزی دادهٔ دو کسب‌وکار را به هم نشان دهد.
+///
+/// این حساب فقط مجموعه می‌سازد و وضعیتشان را تغییر می‌دهد؛ هیچ مسیری
+/// به دادهٔ داخل مجموعه‌ها ندارد.
+model PlatformAdmin {
+  id           String   @id @default(uuid()) @db.Uuid
+  username     String   @unique @db.VarChar(80)
+  fullName     String   @map("full_name") @db.VarChar(120)
+  passwordHash String   @map("password_hash")
+  isActive     Boolean  @default(true) @map("is_active")
+  lastLoginAt  DateTime? @map("last_login_at")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  createdTenants Tenant[]
+
+  @@map("platform_admins")
+}
+
 /// کسب‌وکار مشترکِ سامانه. ریشهٔ جداسازی داده‌ها.
 model Tenant {
   id        String       @id @default(uuid()) @db.Uuid
@@ -34,9 +58,19 @@ model Tenant {
   /// نام مشتریان را به رقبا لو می‌دهد. زیردامنه هر دو مشکل را حل
   /// می‌کند: `refah.cashclose.ir` خودش می‌گوید کدام مجموعه است.
   slug      String       @unique @db.VarChar(63)
+  /// کد کسب‌وکار — شناسهٔ کوتاهی که به صاحب کسب‌وکار داده می‌شود.
+  ///
+  /// برخلاف `slug` که در آدرس می‌نشیند، این کد برای گفتن و نوشتن است:
+  /// پشتیبانی می‌پرسد «کد کسب‌وکارتان چیست؟» و مالک می‌خواندش. UUID را
+  /// نمی‌شود پای تلفن خواند.
+  code      String       @unique @db.VarChar(12)
   status    TenantStatus @default(active)
+  /// مدیر سامانه‌ای که این مجموعه را ساخته — برای پیگیری.
+  createdById String?    @map("created_by_id") @db.Uuid
   createdAt DateTime     @default(now()) @map("created_at")
   updatedAt DateTime     @updatedAt @map("updated_at")
+
+  createdBy PlatformAdmin? @relation(fields: [createdById], references: [id], onDelete: SetNull)
 
   stores        Store[]
   branches      Branch[]
