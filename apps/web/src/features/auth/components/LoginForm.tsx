@@ -17,7 +17,7 @@ export function LoginForm({ onSuccess }: { onSuccess?: () => void }) {
   const { login } = useAuth();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [tenantId, setTenantId] = useState('');
+  const [businessCode, setBusinessCode] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -41,7 +41,11 @@ export function LoginForm({ onSuccess }: { onSuccess?: () => void }) {
     setLoading(true);
 
     try {
-      await login(username.trim(), password, tenantId.trim() || undefined);
+      await login(
+        username.trim(),
+        password,
+        businessCode.trim() || undefined,
+      );
       onSuccess?.();
     } catch (err) {
       const message =
@@ -90,10 +94,10 @@ export function LoginForm({ onSuccess }: { onSuccess?: () => void }) {
         // هرگز ظاهر نمی‌شود. فقط وقتی سامانه از آدرس بدون زیردامنه
         // (توسعه یا آی‌پی خام) باز شود به آن نیاز می‌افتد.
         <TextInput
-          label="شناسهٔ مجموعه"
-          value={tenantId}
-          onChange={(event) => setTenantId(event.target.value)}
-          hint="سامانه از آدرس اختصاصی مجموعهٔ شما باز نشده است. با پشتیبانی تماس بگیرید."
+          label="کد کسب‌وکار"
+          value={businessCode}
+          onChange={(event) => setBusinessCode(event.target.value)}
+          hint="کد هشت‌نویسه‌ای که هنگام ثبت‌نام دریافت کرده‌اید."
           required
           autoFocus
           ltr

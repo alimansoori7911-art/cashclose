@@ -42,6 +42,25 @@ export class TenantResolverService {
     return slug;
   }
 
+  /**
+   * مجموعهٔ متناظر با **کد کسب‌وکار**.
+   *
+   * کد روی کارت اطلاعات به مالک داده می‌شود و پای تلفن قابل خواندن است؛
+   * برخلاف UUID که کسی تایپش نمی‌کند. حروف بزرگ و کوچک یکی گرفته
+   * می‌شوند چون کاربر ممکن است هر طور بنویسد.
+   */
+  async resolveByCode(code: string | undefined): Promise<string | null> {
+    const normalized = code?.trim().toUpperCase();
+    if (!normalized) return null;
+
+    const tenant = await this.prisma.tenant.findUnique({
+      where: { code: normalized },
+      select: { id: true },
+    });
+
+    return tenant?.id ?? null;
+  }
+
   /** مجموعهٔ متناظر با زیردامنه؛ `null` یعنی زیردامنه ناشناخته است. */
   async findBySlug(slug: string): Promise<{ id: string; name: string } | null> {
     return this.prisma.tenant.findUnique({

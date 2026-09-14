@@ -62,10 +62,16 @@ export class AuthService implements OnModuleInit {
     const throttleKey = `${dto.username}:${ip ?? 'unknown'}`;
     this.throttle.assertNotLocked(throttleKey);
 
-    // زیردامنه بر `tenantId` بدنه اولویت دارد: آدرسی که کاربر با آن
-    // آمده، منبع معتبرتری است از چیزی که در درخواست فرستاده شده.
+    // ترتیب اولویت: زیردامنه، بعد کد کسب‌وکار، بعد شناسهٔ خام.
+    //
+    // آدرسی که کاربر با آن آمده معتبرترین منبع است. کد کسب‌وکار همان
+    // چیزی است که روی کارت اطلاعات به مالک داده‌ایم؛ شناسهٔ خام فقط
+    // برای ابزارها و آزمون‌ها می‌ماند.
     const fromHost = await this.tenantResolver.resolveTenantId(host);
-    const tenantId = fromHost ?? dto.tenantId;
+    const fromCode = fromHost
+      ? null
+      : await this.tenantResolver.resolveByCode(dto.businessCode);
+    const tenantId = fromHost ?? fromCode ?? dto.tenantId;
 
     const user = await this.lookup.findForLogin(dto.username, tenantId);
 

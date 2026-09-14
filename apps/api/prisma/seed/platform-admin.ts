@@ -46,7 +46,7 @@ async function main() {
   console.log('حساب مدیر سامانه آماده است:');
   console.log(`  نام کاربری: ${admin.username}`);
   console.log(`  نام: ${admin.fullName}`);
-  console.log('\nورود از مسیر /platform-login در وب‌اپ.');
+  console.log('\nورود از مسیر /platform در وب‌اپ.');
   /* eslint-enable no-console */
 }
 

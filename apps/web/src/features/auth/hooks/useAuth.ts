@@ -60,16 +60,16 @@ export function useAuth() {
   /**
    * ورود.
    *
-   * `tenantId` فقط وقتی لازم است که نام کاربری در چند مجموعه ثبت شده
+   * `businessCode` فقط وقتی لازم است که نام کاربری در چند مجموعه ثبت شده
    * باشد؛ سرور در آن حالت ورود را رد می‌کند و کاربر باید مجموعه‌اش را
    * مشخص کند.
    */
   const login = useCallback(
-    async (username: string, password: string, tenantId?: string) => {
+    async (username: string, password: string, businessCode?: string) => {
       const result = await api.post<LoginResponse>('/auth/login', {
         username,
         password,
-        ...(tenantId ? { tenantId } : {}),
+        ...(businessCode ? { businessCode } : {}),
       });
 
       session.save(result.accessToken, result.user);

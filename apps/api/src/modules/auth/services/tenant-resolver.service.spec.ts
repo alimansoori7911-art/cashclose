@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { TenantResolverService } from './tenant-resolver.service';
 
@@ -50,5 +50,58 @@ describe('استخراج زیردامنهٔ مجموعه', () => {
 
   it('زیردامنهٔ چندسطحی، اولین بخش را می‌گیرد', () => {
     expect(resolver.extractSlug('refah.shop.cashclose.ir')).toBe('refah');
+  });
+});
+
+describe('تشخیص مجموعه از کد کسب‌وکار', () => {
+  function withTenant(found: { id: string } | null) {
+    const prisma = {
+      tenant: { findUnique: vi.fn(async () => found) },
+    };
+    return {
+      service: new TenantResolverService(prisma as never),
+      prisma,
+    };
+  }
+
+  it('کد معتبر شناسهٔ مجموعه را برمی‌گرداند', async () => {
+    const { service } = withTenant({ id: 'tenant-1' });
+
+    expect(await service.resolveByCode('RFH12345')).toBe('tenant-1');
+  });
+
+  it('حروف کوچک هم پذیرفته می‌شود', async () => {
+    // کاربر ممکن است کد را هر طور بنویسد.
+    const { service, prisma } = withTenant({ id: 'tenant-1' });
+
+    await service.resolveByCode('rfh12345');
+
+    expect(prisma.tenant.findUnique).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { code: 'RFH12345' } }),
+    );
+  });
+
+  it('فاصلهٔ اضافه حذف می‌شود', async () => {
+    const { service, prisma } = withTenant({ id: 'tenant-1' });
+
+    await service.resolveByCode('  RFH12345  ');
+
+    expect(prisma.tenant.findUnique).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { code: 'RFH12345' } }),
+    );
+  });
+
+  it('کد ناشناخته null می‌دهد', async () => {
+    const { service } = withTenant(null);
+
+    expect(await service.resolveByCode('NOSUCH12')).toBeNull();
+  });
+
+  it('کد خالی بدون تماس با دیتابیس رد می‌شود', async () => {
+    const { service, prisma } = withTenant({ id: 'x' });
+
+    expect(await service.resolveByCode(undefined)).toBeNull();
+    expect(await service.resolveByCode('   ')).toBeNull();
+    expect(prisma.tenant.findUnique).not.toHaveBeenCalled();
   });
 });

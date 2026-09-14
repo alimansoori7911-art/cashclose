@@ -26,4 +26,17 @@ export class LoginDto {
   @IsOptional()
   @IsUUID(undefined, { message: 'شناسهٔ مجموعه معتبر نیست.' })
   tenantId?: string;
+
+  /**
+   * کد کسب‌وکار — همان چیزی که روی کارت اطلاعات به مالک داده می‌شود.
+   *
+   * جایگزین کاربرپسندِ `tenantId` است: کسی UUID را پای تلفن نمی‌خواند و
+   * تایپ نمی‌کند. هر دو پذیرفته می‌شوند تا ابزارها و آزمون‌ها که شناسه
+   * دارند هم کار کنند.
+   */
+  @ApiPropertyOptional({ description: 'کد کسب‌وکار، مثلاً RFH12345' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(12, { message: 'کد کسب‌وکار معتبر نیست.' })
+  businessCode?: string;
 }
