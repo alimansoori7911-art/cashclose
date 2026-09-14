@@ -5,6 +5,7 @@ import {
   Headers,
   HttpCode,
   Ip,
+  Patch,
   Post,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
@@ -13,12 +14,14 @@ import { Throttle } from '@nestjs/throttler';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Public } from '../../common/decorators/roles.decorator';
 import type { RequestUser } from '../../common/tenant/request-user';
+import { ChangePasswordDto } from './dto/change-password.dto';
 import { LoginDto } from './dto/login.dto';
 import {
   ForgotPasswordDto,
   ResetPasswordDto,
 } from './dto/password-reset.dto';
 import { AuthService } from './services/auth.service';
+import { ChangePasswordService } from './services/change-password.service';
 import { PasswordResetService } from './services/password-reset.service';
 
 @ApiTags('auth')
@@ -27,6 +30,7 @@ export class AuthController {
   constructor(
     private readonly auth: AuthService,
     private readonly passwordReset: PasswordResetService,
+    private readonly changePasswords: ChangePasswordService,
   ) {}
 
   @Public()
@@ -43,6 +47,23 @@ export class AuthController {
     // میزبان درخواست، مجموعه را مشخص می‌کند؛ کاربر هیچ شناسه‌ای تایپ
     // نمی‌کند. `tenantId` بدنه فقط برای ابزارها و آزمون‌ها می‌ماند.
     return this.auth.login(dto, ip, host);
+  }
+
+  @Patch('password')
+  @ApiBearerAuth()
+  @HttpCode(200)
+  // سقف سخت‌گیرانه: تلاش پیاپی برای حدس رمز فعلی باید مهار شود.
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  @ApiOperation({ summary: 'تغییر رمز عبور توسط خود کاربر' })
+  changePassword(
+    @CurrentUser() user: RequestUser,
+    @Body() dto: ChangePasswordDto,
+  ) {
+    return this.changePasswords.change(
+      user,
+      dto.currentPassword,
+      dto.newPassword,
+    );
   }
 
   @Get('me')

@@ -6,9 +6,10 @@ import {
   type UserRole as Role,
 } from '@cashclose/shared';
 import { Link, useLocation } from 'react-router-dom';
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 
 import { useAuth } from '../../features/auth/hooks/useAuth';
+import { ChangePasswordModal } from '../../features/auth/components/ChangePasswordModal';
 import { NotificationBell } from '../../features/notifications/NotificationBell';
 import { Button } from '../ui/Button/index';
 
@@ -44,6 +45,7 @@ const NAV_ITEMS: { path: string; label: string; roles: Role[] }[] = [
 /** چارچوب مشترک صفحات پس از ورود: نوار بالا، منو و ناحیهٔ محتوا. */
 export function AppLayout({ children }: { children: ReactNode }) {
   const { user, logout } = useAuth();
+  const [changingPassword, setChangingPassword] = useState(false);
   const location = useLocation();
 
   if (!user) return null;
@@ -83,6 +85,9 @@ export function AppLayout({ children }: { children: ReactNode }) {
                 {USER_ROLE_LABELS[user.role]}
               </div>
             </div>
+            <Button variant="ghost" onClick={() => setChangingPassword(true)}>
+              تغییر رمز
+            </Button>
             <Button
               variant="ghost"
               onClick={() => {
@@ -94,6 +99,10 @@ export function AppLayout({ children }: { children: ReactNode }) {
             </Button>
           </div>
         </div>
+
+        {changingPassword && (
+          <ChangePasswordModal onClose={() => setChangingPassword(false)} />
+        )}
 
         {visibleItems.length > 1 && (
           <nav className="mx-auto max-w-5xl px-6">
