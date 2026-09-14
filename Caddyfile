@@ -1,0 +1,53 @@
+# پیکربندی Caddy — گواهی HTTPS خودکار.
+#
+# Caddy خودش از Let's Encrypt گواهی می‌گیرد و پیش از انقضا تمدید
+# می‌کند؛ هیچ کار دستی لازم نیست.
+
+{
+	email {$ACME_EMAIL}
+
+	# صدور گواهی درخواستی فقط برای زیردامنه‌های همین دامنه.
+	#
+	# بدون این محدودیت، هر کسی می‌توانست دامنهٔ خودش را به آی‌پی این
+	# سرور اشاره دهد و ما را وادار به گرفتن گواهی برای آن کند — راهی
+	# برای رسیدن به سقف نرخ Let's Encrypt و از کار انداختن صدور گواهی
+	# مشتریان واقعی.
+	on_demand_tls {
+		ask http://web:80/api/v1/health/tls-check
+	}
+}
+
+# دامنهٔ اصلی و همهٔ زیردامنه‌ها.
+#
+# زیردامنه با ستاره پوشش داده می‌شود تا مشتری تازه نیازی به تغییر
+# پیکربندی نداشته باشد: `rafah.example.com` و `korosh.example.com` هر دو
+# همین‌جا می‌افتند و خودِ سامانه از روی نام میزبان تشخیص می‌دهد کدام
+# مجموعه است.
+{$DOMAIN}, *.{$DOMAIN} {
+	# گواهی wildcard فقط با چالش DNS ممکن است و به توکن پنل دامنه نیاز
+	# دارد. برای سادگی، هر زیردامنه گواهی جداگانهٔ خودش را در اولین
+	# بازدید می‌گیرد (چالش HTTP).
+	tls {
+		on_demand
+	}
+
+	encode gzip
+
+	# فایل‌های ایستا و مسیرهای API هر دو از سرویس `web` می‌آیند؛ nginx
+	# داخل آن، درخواست‌های `/api` را به بک‌اند می‌فرستد.
+	reverse_proxy web:80 {
+		header_up Host {host}
+		header_up X-Real-IP {remote_host}
+		header_up X-Forwarded-Proto {scheme}
+	}
+
+	# سربرگ‌های امنیتی.
+	header {
+		# مرورگر تا یک سال فقط HTTPS بزند.
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+	}
+}

@@ -3,6 +3,7 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Query,
   Res,
 } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
@@ -57,5 +58,33 @@ export class HealthController {
     }
 
     return report;
+  }
+
+  /**
+   * تأیید نام میزبان برای صدور گواهی HTTPS.
+   *
+   * Caddy پیش از گرفتن گواهیِ درخواستی، این مسیر را می‌پرسد. بدون آن،
+   * هر کسی می‌توانست دامنهٔ خودش را به آی‌پی این سرور اشاره دهد و ما را
+   * وادار به صدور گواهی کند — راهی برای رسیدن به سقف نرخ Let's Encrypt
+   * و از کار انداختن صدور گواهی مشتریان واقعی.
+   *
+   * فقط زیردامنه‌ای پذیرفته می‌شود که مجموعه‌ای فعال با همان `slug`
+   * وجود داشته باشد.
+   */
+  @Public()
+  @Get('tls-check')
+  @ApiOperation({ summary: 'تأیید دامنه پیش از صدور گواهی' })
+  async tlsCheck(
+    @Query('domain') domain: string | undefined,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    const allowed = await this.health.isKnownHost(domain);
+
+    if (!allowed) {
+      response.status(HttpStatus.NOT_FOUND);
+      return { allowed: false };
+    }
+
+    return { allowed: true };
   }
 }

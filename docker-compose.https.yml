@@ -1,0 +1,40 @@
+# افزودن HTTPS با گواهی خودکار.
+#
+# جدا از `docker-compose.yml` است تا استقرار بدون دامنه (روی آی‌پی خام،
+# برای آزمون) همچنان ساده بماند.
+#
+# اجرا:
+#   docker compose -f docker-compose.yml -f docker-compose.https.yml up -d
+#
+# پیش‌نیاز:
+#   • دامنه‌ای که رکورد A و A wildcard آن به آی‌پی این سرور اشاره کند
+#   • پورت ۸۰ و ۴۴۳ باز باشند (۸۰ برای صدور گواهی لازم است)
+#   • `DOMAIN` و `ACME_EMAIL` در فایل `.env`
+
+services:
+  # سرویس وب دیگر مستقیم روی پورت ۸۰ نمی‌نشیند؛ Caddy جلویش قرار
+  # می‌گیرد و ترافیک رمزنگاری‌شده را به آن می‌سپارد.
+  web:
+    ports: []
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      - web
+    ports:
+      - '80:80'
+      - '443:443'
+    environment:
+      DOMAIN: ${DOMAIN}
+      ACME_EMAIL: ${ACME_EMAIL}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      # گواهی‌ها باید بین ری‌استارت‌ها بمانند؛ وگرنه هر بار دوباره صادر
+      # می‌شوند و Let's Encrypt سقف نرخ دارد.
+      - caddy-data:/data
+      - caddy-config:/config
+
+volumes:
+  caddy-data:
+  caddy-config:
