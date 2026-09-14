@@ -1,50 +1,45 @@
 import { useState } from 'react';
 
-import { Alert } from '../../../components/ui/Alert/index';
 import { Button } from '../../../components/ui/Button/index';
 import { DataTable, type Column } from '../../../components/ui/DataTable/index';
-import { Modal } from '../../../components/ui/Modal/index';
-import { TextInput } from '../../../components/ui/TextInput/index';
 import { ApiError } from '../../../lib/api';
 import {
   useBranches,
-  useCreate,
+  useDeactivate,
   type Branch,
 } from '../hooks/useAdminData';
+import { BranchEditModal } from './BranchEditModal';
+import { BranchFormModal } from './BranchFormModal';
+import { ConfirmDeactivate } from './ConfirmDeactivate';
+import { RowActions } from './RowActions';
 
 /** مدیریت شعبه‌ها. */
 export function BranchesTab() {
   const branches = useBranches();
-  const createBranch = useCreate<
-    { storeId: string; name: string; address?: string },
-    Branch
-  >('/branches', 'branches');
+  const deactivate = useDeactivate((id) => `/branches/${id}`, 'branches');
 
   const [open, setOpen] = useState(false);
-  const [name, setName] = useState('');
-  const [address, setAddress] = useState('');
-  const [error, setError] = useState<string | null>(null);
+  const [editing, setEditing] = useState<Branch | null>(null);
+  const [removing, setRemoving] = useState<Branch | null>(null);
+  const [removeError, setRemoveError] = useState<string | null>(null);
 
   // فروشگاه از اولین شعبهٔ موجود گرفته می‌شود؛ در این فاز هر مستأجر یک
   // فروشگاه دارد و انتخاب دستی لازم نیست.
   const storeId = branches.data?.items[0]?.storeId;
 
-  async function handleSubmit(event: React.FormEvent) {
-    event.preventDefault();
-    if (!name.trim() || !storeId) return;
+  async function handleDeactivate() {
+    if (!removing) return;
+    setRemoveError(null);
 
-    setError(null);
     try {
-      await createBranch.mutateAsync({
-        storeId,
-        name: name.trim(),
-        ...(address.trim() ? { address: address.trim() } : {}),
-      });
-      setName('');
-      setAddress('');
-      setOpen(false);
+      await deactivate.mutateAsync(removing.id);
+      setRemoving(null);
     } catch (err) {
-      setError(err instanceof ApiError ? err.displayMessage : 'ثبت ناموفق بود.');
+      setRemoveError(
+        err instanceof ApiError
+          ? err.displayMessage
+          : 'غیرفعال‌سازی ناموفق بود.',
+      );
     }
   }
 
@@ -72,6 +67,20 @@ export function BranchesTab() {
         </span>
       ),
     },
+    {
+      key: 'actions',
+      header: '',
+      render: (b) => (
+        <RowActions
+          isActive={b.isActive}
+          onEdit={() => setEditing(b)}
+          onDeactivate={() => {
+            setRemoveError(null);
+            setRemoving(b);
+          }}
+        />
+      ),
+    },
   ];
 
   return (
@@ -93,37 +102,27 @@ export function BranchesTab() {
         emptyMessage="هنوز شعبه‌ای تعریف نشده است."
       />
 
-      <Modal open={open} onClose={() => setOpen(false)} title="افزودن شعبه">
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          {error && <Alert tone="error">{error}</Alert>}
+      {editing && (
+        <BranchEditModal branch={editing} onClose={() => setEditing(null)} />
+      )}
 
-          <TextInput
-            label="نام شعبه"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-            autoFocus
-          />
-          <TextInput
-            label="نشانی"
-            value={address}
-            onChange={(e) => setAddress(e.target.value)}
-          />
+      {removing && (
+        <ConfirmDeactivate
+          title="غیرفعال‌سازی شعبه"
+          name={removing.name}
+          note="شعبه در فهرست‌ها نمی‌آید، ولی صندوق‌ها و سوابقش دست‌نخورده می‌مانند."
+          pending={deactivate.isPending}
+          error={removeError}
+          onCancel={() => setRemoving(null)}
+          onConfirm={() => void handleDeactivate()}
+        />
+      )}
 
-          <div className="flex justify-end gap-2 pt-1">
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => setOpen(false)}
-            >
-              انصراف
-            </Button>
-            <Button type="submit" loading={createBranch.isPending}>
-              ثبت شعبه
-            </Button>
-          </div>
-        </form>
-      </Modal>
+      <BranchFormModal
+        open={open}
+        onClose={() => setOpen(false)}
+        storeId={storeId}
+      />
     </div>
   );
 }

@@ -1,4 +1,8 @@
-import { formatMoney, type TransactionType } from '@cashclose/shared';
+import {
+  formatMoney,
+  type ProcessCheck,
+  type TransactionType,
+} from '@cashclose/shared';
 
 import type {
   AnomalyHint,
@@ -9,6 +13,7 @@ interface Props {
   difference: number;
   suggestions: TypeHint[];
   anomalies: AnomalyHint[];
+  processChecks: ProcessCheck[];
   onAddRow: (type: TransactionType) => void;
 }
 
@@ -23,6 +28,7 @@ export function DifferenceHelp({
   difference,
   suggestions,
   anomalies,
+  processChecks,
   onAddRow,
 }: Props) {
   if (difference === 0) return null;
@@ -58,10 +64,16 @@ export function DifferenceHelp({
         </div>
       </div>
 
-      {anomalies.length > 0 && (
+      {(anomalies.length > 0 || processChecks.length > 0) && (
         <div className="rounded-lg border border-warning/40 bg-surface p-4">
           <p className="mb-2 text-sm font-medium text-text">بررسی کنید</p>
-          <ul className="flex flex-col gap-1.5">
+          <ul className="flex flex-col gap-2">
+            {processChecks.map((check) => (
+              <li key={check.title} className="text-xs">
+                <span className="block text-text">{check.title}</span>
+                <span className="block text-text-muted">{check.detail}</span>
+              </li>
+            ))}
             {anomalies.map((item) => (
               <li key={item.label} className="text-xs text-text-muted">
                 <span className="text-text">{item.label}</span> {item.message}

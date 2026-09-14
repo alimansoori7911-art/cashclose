@@ -108,6 +108,7 @@ export function CashRegisterPage() {
         focusTarget={focus.target}
         suggestions={help.suggestions}
         anomalies={help.anomalies}
+        processChecks={help.processChecks}
         onUpdate={form.update}
         onAddRow={form.addRow}
         onSuggestionPick={(type) => focus.focusRow(form.ensureRow(type))}

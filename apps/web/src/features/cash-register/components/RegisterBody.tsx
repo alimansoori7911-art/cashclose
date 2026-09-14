@@ -1,4 +1,8 @@
-import type { CashCalculationResult, TransactionType } from '@cashclose/shared';
+import type {
+  CashCalculationResult,
+  ProcessCheck,
+  TransactionType,
+} from '@cashclose/shared';
 
 import type {
   AnomalyHint,
@@ -17,6 +21,7 @@ interface Props {
   focusTarget: string | null;
   suggestions: TypeHint[];
   anomalies: AnomalyHint[];
+  processChecks: ProcessCheck[];
   onUpdate: (key: string, patch: Partial<Omit<FormRow, 'key' | 'type'>>) => void;
   onAddRow: (type: TransactionType) => void;
   /** انتخاب یک پیشنهاد — ردیف موجود را پیدا و فوکوس می‌کند. */
@@ -37,6 +42,7 @@ export function RegisterBody({
   focusTarget,
   suggestions,
   anomalies,
+  processChecks,
   onUpdate,
   onAddRow,
   onSuggestionPick,
@@ -68,6 +74,7 @@ export function RegisterBody({
             difference={Number(calculation.difference)}
             suggestions={suggestions}
             anomalies={anomalies}
+            processChecks={processChecks}
             onAddRow={onSuggestionPick}
           />
         </>

@@ -5,6 +5,7 @@ import {
   isPrimaryType,
   PRIMARY_TYPES,
   splitBySide,
+  processChecksFor,
   suggestForDifference,
 } from './prominence.js';
 import { FormulaSide, TransactionType } from './types.js';
@@ -109,5 +110,32 @@ describe('تفکیک دو سمت معادله', () => {
     );
 
     expect(primary.length + secondary.length).toBe(expected.length);
+  });
+});
+
+describe('بررسی‌های فرایندی', () => {
+  it('صندوق تراز بررسی فرایندی ندارد', () => {
+    expect(processChecksFor(0)).toEqual([]);
+  });
+
+  it('کسری یعنی پول هست ولی ثبت نشده', () => {
+    const checks = processChecksFor(-500_000);
+
+    expect(checks).toHaveLength(1);
+    expect(checks[0]?.title).toContain('کارت کشیده شده ولی مبلغش ثبت نشده');
+  });
+
+  it('مازاد یعنی ثبت هست ولی پول نیست', () => {
+    const checks = processChecksFor(500_000);
+
+    expect(checks).toHaveLength(1);
+    expect(checks[0]?.title).toContain('مبلغ ثبت شده ولی کارت کشیده نشده');
+  });
+
+  it('دو جهت هرگز پیام یکسان نمی‌دهند', () => {
+    // اگر یکی بودند، در یک جهت چیزی پیشنهاد می‌شد که منطقاً ممکن نیست.
+    expect(processChecksFor(-1)[0]?.title).not.toBe(
+      processChecksFor(1)[0]?.title,
+    );
   });
 });

@@ -64,6 +64,43 @@ export function suggestForDifference(
   return pool.filter((type) => !alreadyFilled.includes(type));
 }
 
+/**
+ * خطاهای ثبتی که قلم مالی نیستند — فقط باید بررسی شوند.
+ *
+ * این دو حالت شایع‌اند ولی **قلم اضافه نمی‌خواهند**؛ صندوقدار باید برود
+ * عددی را که جا انداخته درست کند. جهتشان مخالف هم است، پس هرکدام فقط
+ * در سمت خودش نشان داده می‌شود:
+ *
+ *   کسری → پول هست ولی ثبت نشده (کارت کشیده، مبلغش را وارد نکرده)
+ *   مازاد → ثبت هست ولی پول نیست (مبلغ را نوشته، کارت نکشیده)
+ */
+export interface ProcessCheck {
+  readonly title: string;
+  readonly detail: string;
+}
+
+const SHORTAGE_CHECKS: readonly ProcessCheck[] = [
+  {
+    title: 'کارت کشیده شده ولی مبلغش ثبت نشده',
+    detail:
+      'رسید پایان روز هر دستگاه را با مبلغی که وارد کرده‌اید مقایسه کنید.',
+  },
+];
+
+const SURPLUS_CHECKS: readonly ProcessCheck[] = [
+  {
+    title: 'مبلغ ثبت شده ولی کارت کشیده نشده',
+    detail:
+      'اگر تراکنشی روی دستگاه انجام نشده، پیش از بستن صندوق آن را انجام دهید.',
+  },
+];
+
+/** بررسی‌های فرایندی متناسب با جهت اختلاف. */
+export function processChecksFor(difference: number): ProcessCheck[] {
+  if (difference === 0) return [];
+  return [...(difference < 0 ? SHORTAGE_CHECKS : SURPLUS_CHECKS)];
+}
+
 /** ترتیب نمایش: اقلام پرکاربرد اول، بعد بقیه با ترتیب سند. */
 export function sortByProminence(
   types: readonly TransactionType[],

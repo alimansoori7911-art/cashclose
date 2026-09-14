@@ -1,5 +1,6 @@
 import {
   getTransactionType,
+  processChecksFor,
   suggestForDifference,
   type TransactionType,
 } from '@cashclose/shared';
@@ -104,6 +105,17 @@ export function useDifferenceHelp(
     return result.slice(0, 3);
   }, [rows, difference, previous]);
 
+  /**
+   * بررسی‌های فرایندی — خطاهایی که قلم مالی نیستند.
+   *
+   * «کارت کشیده ولی ثبت نشده» و «ثبت شده ولی کارت نکشیده» هر دو شایع‌اند
+   * ولی جهتشان مخالف هم است؛ هرکدام فقط در سمت خودش می‌آید.
+   */
+  const processChecks = useMemo(
+    () => processChecksFor(difference),
+    [difference],
+  );
+
   /** جمع هر قلم در صندوق قبلی — برای نمایش زیر همان قلم. */
   const previousByType = useMemo(() => {
     const map = new Map<string, number>();
@@ -113,7 +125,7 @@ export function useDifferenceHelp(
     return map;
   }, [previous]);
 
-  return { suggestions, anomalies, previousByType };
+  return { suggestions, anomalies, processChecks, previousByType };
 }
 
 /** نوع ناشناخته (مثلاً پس از تغییر اسکیما) نباید صفحه را بشکند. */

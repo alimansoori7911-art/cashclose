@@ -1,57 +1,48 @@
-import { useState, type FormEvent } from 'react';
+import { useState } from 'react';
 
-import { Alert } from '../../../components/ui/Alert/index';
 import { Button } from '../../../components/ui/Button/index';
 import { DataTable, type Column } from '../../../components/ui/DataTable/index';
-import { Modal } from '../../../components/ui/Modal/index';
-import { SelectInput } from '../../../components/ui/SelectInput/index';
-import { TextInput } from '../../../components/ui/TextInput/index';
 import { ApiError } from '../../../lib/api';
 import {
   useBranches,
-  useCreate,
+  useDeactivate,
   useTerminals,
+  useUsers,
   type PosTerminal,
 } from '../hooks/useAdminData';
+import { ConfirmDeactivate } from './ConfirmDeactivate';
+import { RowActions } from './RowActions';
+import { TerminalEditModal } from './TerminalEditModal';
+import { TerminalFormModal } from './TerminalFormModal';
 
 /** مدیریت کارتخوان‌ها. */
 export function TerminalsTab() {
   const terminals = useTerminals();
   const branches = useBranches();
-  const createTerminal = useCreate<Record<string, string>, PosTerminal>(
-    '/pos-terminals',
+  const users = useUsers();
+  const deactivate = useDeactivate(
+    (id) => `/pos-terminals/${id}`,
     'pos-terminals',
   );
 
   const [open, setOpen] = useState(false);
-  const [name, setName] = useState('');
-  const [bank, setBank] = useState('');
-  const [branchId, setBranchId] = useState('');
-  const [error, setError] = useState<string | null>(null);
+  const [editing, setEditing] = useState<PosTerminal | null>(null);
+  const [removing, setRemoving] = useState<PosTerminal | null>(null);
+  const [removeError, setRemoveError] = useState<string | null>(null);
 
-  const activeBranches = (branches.data?.items ?? []).filter((b) => b.isActive);
-
-  async function handleSubmit(event: FormEvent) {
-    event.preventDefault();
-    setError(null);
-
-    if (!branchId) {
-      setError('انتخاب شعبه الزامی است.');
-      return;
-    }
+  async function handleDeactivate() {
+    if (!removing) return;
+    setRemoveError(null);
 
     try {
-      await createTerminal.mutateAsync({
-        branchId,
-        name: name.trim(),
-        ...(bank.trim() ? { bank: bank.trim() } : {}),
-      });
-      setName('');
-      setBank('');
-      setBranchId('');
-      setOpen(false);
+      await deactivate.mutateAsync(removing.id);
+      setRemoving(null);
     } catch (err) {
-      setError(err instanceof ApiError ? err.displayMessage : 'ثبت ناموفق بود.');
+      setRemoveError(
+        err instanceof ApiError
+          ? err.displayMessage
+          : 'غیرفعال‌سازی ناموفق بود.',
+      );
     }
   }
 
@@ -71,6 +62,20 @@ export function TerminalsTab() {
         <span className={t.isActive ? 'text-balanced' : 'text-text-muted'}>
           {t.isActive ? 'فعال' : 'غیرفعال'}
         </span>
+      ),
+    },
+    {
+      key: 'actions',
+      header: '',
+      render: (t) => (
+        <RowActions
+          isActive={t.isActive}
+          onEdit={() => setEditing(t)}
+          onDeactivate={() => {
+            setRemoveError(null);
+            setRemoving(t);
+          }}
+        />
       ),
     },
   ];
@@ -94,49 +99,33 @@ export function TerminalsTab() {
         emptyMessage="هنوز کارتخوانی تعریف نشده است."
       />
 
-      <Modal open={open} onClose={() => setOpen(false)} title="افزودن کارتخوان">
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          {error && <Alert tone="error">{error}</Alert>}
+      <TerminalFormModal
+        open={open}
+        onClose={() => setOpen(false)}
+        branches={branches.data?.items ?? []}
+      />
 
-          <TextInput
-            label="نام دستگاه"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-            autoFocus
-          />
-          <TextInput
-            label="بانک"
-            value={bank}
-            onChange={(e) => setBank(e.target.value)}
-          />
+      {editing && (
+        <TerminalEditModal
+          terminal={editing}
+          cashiers={(users.data?.items ?? []).filter(
+            (user) => user.role === 'cashier',
+          )}
+          onClose={() => setEditing(null)}
+        />
+      )}
 
-          <SelectInput
-            label="شعبه"
-            value={branchId}
-            onChange={setBranchId}
-            placeholder="— انتخاب کنید —"
-            required
-            options={activeBranches.map((branch) => ({
-              value: branch.id,
-              label: branch.name,
-            }))}
-          />
-
-          <div className="flex justify-end gap-2 pt-1">
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => setOpen(false)}
-            >
-              انصراف
-            </Button>
-            <Button type="submit" loading={createTerminal.isPending}>
-              ثبت کارتخوان
-            </Button>
-          </div>
-        </form>
-      </Modal>
+      {removing && (
+        <ConfirmDeactivate
+          title="غیرفعال‌سازی کارتخوان"
+          name={removing.name}
+          note="دستگاه در فرم صندوق نمی‌آید، ولی تراکنش‌های ثبت‌شده‌اش دست‌نخورده می‌مانند."
+          pending={deactivate.isPending}
+          error={removeError}
+          onCancel={() => setRemoving(null)}
+          onConfirm={() => void handleDeactivate()}
+        />
+      )}
     </div>
   );
 }
