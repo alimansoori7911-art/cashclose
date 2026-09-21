@@ -14,13 +14,18 @@ import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 
 import { Public } from '../../common/decorators/roles.decorator';
-import { CreateTenantDto, PlatformLoginDto } from './dto/create-tenant.dto';
+import {
+  CreateTenantDto,
+  PlatformLoginDto,
+  ResetOwnerPasswordDto,
+} from './dto/create-tenant.dto';
 import {
   CurrentAdmin,
   PlatformAuthGuard,
 } from './platform-auth.guard';
 import type { RequestAdmin } from './platform-jwt.strategy';
 import { PlatformAuthService } from './services/platform-auth.service';
+import { OwnerRecoveryService } from './services/owner-recovery.service';
 import { ProvisioningService } from './services/provisioning.service';
 import { TenantAdminService } from './services/tenant-admin.service';
 
@@ -42,6 +47,7 @@ export class PlatformController {
     private readonly auth: PlatformAuthService,
     private readonly provisioning: ProvisioningService,
     private readonly tenants: TenantAdminService,
+    private readonly recovery: OwnerRecoveryService,
   ) {}
 
   @Public()
@@ -71,6 +77,33 @@ export class PlatformController {
   @ApiOperation({ summary: 'ساخت کسب‌وکار تازه به‌همراه حساب مالک' })
   create(@CurrentAdmin() admin: RequestAdmin, @Body() dto: CreateTenantDto) {
     return this.provisioning.create(admin.id, dto);
+  }
+
+  @Public()
+  @UseGuards(PlatformAuthGuard)
+  @ApiBearerAuth()
+  @Get('tenants/:id/owners')
+  @ApiOperation({ summary: 'مالکان یک مجموعه — برای بازنشانی رمز' })
+  owners(@Param('id', ParseUUIDPipe) id: string) {
+    return this.recovery.listOwners(id);
+  }
+
+  /**
+   * بازنشانی رمز مالک.
+   *
+   * تنها راه نجات وقتی خودِ مالک رمزش را فراموش کند؛ بالادستی‌ای در آن
+   * مجموعه نیست. فقط نقش مالک پذیرفته می‌شود.
+   */
+  @Public()
+  @UseGuards(PlatformAuthGuard)
+  @ApiBearerAuth()
+  @Patch('tenants/:id/owner-password')
+  @ApiOperation({ summary: 'بازنشانی رمز مالک مجموعه' })
+  resetOwner(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: ResetOwnerPasswordDto,
+  ) {
+    return this.recovery.resetOwnerPassword(id, dto.userId, dto.newPassword);
   }
 
   @Public()

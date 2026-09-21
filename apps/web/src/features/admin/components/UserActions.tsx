@@ -7,6 +7,7 @@ interface Props {
   actorId: string | undefined;
   actorRole: string | undefined;
   onEdit: () => void;
+  onResetPassword: () => void;
   onDeactivate: () => void;
 }
 
@@ -22,6 +23,7 @@ export function UserActions({
   actorId,
   actorRole,
   onEdit,
+  onResetPassword,
   onDeactivate,
 }: Props) {
   const isSelf = user.id === actorId;
@@ -43,6 +45,18 @@ export function UserActions({
           className="rounded px-2 py-1 text-sm text-primary transition-colors hover:bg-primary-soft"
         >
           ویرایش
+        </button>
+      )}
+
+      {/* بازنشانی رمز همان قاعدهٔ ویرایش را دارد: مدیرِ مالک نمی‌تواند
+          رمزش را عوض کند. */}
+      {canEdit && (
+        <button
+          type="button"
+          onClick={onResetPassword}
+          className="rounded px-2 py-1 text-sm text-primary transition-colors hover:bg-primary-soft"
+        >
+          رمز تازه
         </button>
       )}
 

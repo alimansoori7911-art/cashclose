@@ -18,11 +18,13 @@ export function buildUserColumns({
   actorId,
   actorRole,
   onEdit,
+  onResetPassword,
   onDeactivate,
 }: {
   actorId: string | undefined;
   actorRole: string | undefined;
   onEdit: (user: AdminUser) => void;
+  onResetPassword: (user: AdminUser) => void;
   onDeactivate: (user: AdminUser) => void;
 }): Column<AdminUser>[] {
   return [
@@ -73,6 +75,7 @@ export function buildUserColumns({
           actorId={actorId}
           actorRole={actorRole}
           onEdit={() => onEdit(u)}
+          onResetPassword={() => onResetPassword(u)}
           onDeactivate={() => onDeactivate(u)}
         />
       ),

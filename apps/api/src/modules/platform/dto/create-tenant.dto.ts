@@ -1,6 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsOptional,
+  IsUUID,
   IsString,
   Matches,
   MaxLength,
@@ -65,4 +66,20 @@ export class PlatformLoginDto {
   @IsString()
   @MaxLength(128)
   password!: string;
+}
+
+/** بازنشانی رمز مالک توسط مدیر سامانه. */
+export class ResetOwnerPasswordDto {
+  @ApiProperty({ description: 'شناسهٔ کاربرِ مالک' })
+  @IsUUID(undefined, { message: 'شناسهٔ کاربر معتبر نیست.' })
+  userId!: string;
+
+  @ApiProperty({ description: 'رمز تازه' })
+  @IsString()
+  @MinLength(8, { message: 'رمز عبور حداقل ۸ نویسه است.' })
+  @MaxLength(128)
+  @Matches(/^(?=.*[A-Za-z])(?=.*\d).+$/, {
+    message: 'رمز عبور باید حداقل شامل یک حرف و یک رقم باشد.',
+  })
+  newPassword!: string;
 }

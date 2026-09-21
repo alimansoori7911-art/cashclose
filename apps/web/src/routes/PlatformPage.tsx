@@ -3,11 +3,13 @@ import { useState } from 'react';
 import { Button } from '../components/ui/Button/index';
 import { CreateTenantForm } from '../features/platform/components/CreateTenantForm';
 import { CredentialsCard } from '../features/platform/components/CredentialsCard';
+import { OwnerRecoveryModal } from '../features/platform/components/OwnerRecoveryModal';
 import { PlatformLogin } from '../features/platform/components/PlatformLogin';
 import { TenantTable } from '../features/platform/components/TenantTable';
 import {
   useTenantList,
   type CreateTenantResult,
+  type TenantSummary,
 } from '../features/platform/hooks/usePlatformApi';
 import { platformSession } from '../features/platform/platform-client';
 
@@ -22,6 +24,7 @@ export function PlatformPage() {
     Boolean(platformSession.get()),
   );
   const [creating, setCreating] = useState(false);
+  const [recovering, setRecovering] = useState<TenantSummary | null>(null);
   const [created, setCreated] = useState<{
     result: CreateTenantResult;
     password: string;
@@ -58,7 +61,7 @@ export function PlatformPage() {
         </div>
       </div>
 
-      <TenantTable query={tenants} />
+      <TenantTable query={tenants} onRecoverOwner={setRecovering} />
 
       {creating && (
         <CreateTenantForm
@@ -67,6 +70,13 @@ export function PlatformPage() {
             setCreating(false);
             setCreated({ result, password });
           }}
+        />
+      )}
+
+      {recovering && (
+        <OwnerRecoveryModal
+          tenant={recovering}
+          onClose={() => setRecovering(null)}
         />
       )}
 

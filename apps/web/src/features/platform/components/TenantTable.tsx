@@ -9,6 +9,7 @@ import {
 /** فهرست کسب‌وکارها — نمای مدیر سامانه. */
 export function TenantTable({
   query,
+  onRecoverOwner,
 }: {
   query: {
     data?: TenantSummary[];
@@ -16,6 +17,7 @@ export function TenantTable({
     isError: boolean;
     refetch: () => void;
   };
+  onRecoverOwner: (tenant: TenantSummary) => void;
 }) {
   const status = useTenantStatus();
 
@@ -64,6 +66,21 @@ export function TenantTable({
         >
           {t.status === 'active' ? 'فعال' : 'تعلیق'}
         </span>
+      ),
+    },
+    {
+      key: 'recover',
+      header: '',
+      // تنها راه نجات وقتی خودِ مالک رمزش را فراموش کند؛ بالادستی‌ای در
+      // آن مجموعه نیست.
+      render: (t) => (
+        <button
+          type="button"
+          onClick={() => onRecoverOwner(t)}
+          className="rounded px-2 py-1 text-sm text-primary transition-colors hover:bg-primary-soft"
+        >
+          رمز مالک
+        </button>
       ),
     },
     {

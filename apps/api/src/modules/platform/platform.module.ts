@@ -6,6 +6,7 @@ import { PasswordService } from '../auth/services/password.service';
 import { PlatformController } from './platform.controller';
 import { PlatformJwtStrategy } from './platform-jwt.strategy';
 import { PlatformAuthService } from './services/platform-auth.service';
+import { OwnerRecoveryService } from './services/owner-recovery.service';
 import { ProvisioningService } from './services/provisioning.service';
 import { TenantAdminService } from './services/tenant-admin.service';
 
@@ -27,6 +28,7 @@ import { TenantAdminService } from './services/tenant-admin.service';
     PlatformJwtStrategy,
     PlatformAuthService,
     ProvisioningService,
+    OwnerRecoveryService,
     TenantAdminService,
     PasswordService,
   ],

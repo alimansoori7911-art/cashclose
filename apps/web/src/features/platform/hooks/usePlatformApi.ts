@@ -66,3 +66,28 @@ export function useTenantStatus() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['platform'] }),
   });
 }
+
+export interface TenantOwner {
+  id: string;
+  username: string;
+  fullName: string;
+}
+
+/** مالکان یک مجموعه — برای بازنشانی رمز. */
+export function useTenantOwners(tenantId: string | null) {
+  return useQuery({
+    queryKey: ['platform', 'owners', tenantId],
+    queryFn: () => platformApi.get<TenantOwner[]>(`/tenants/${tenantId}/owners`),
+    enabled: Boolean(tenantId),
+  });
+}
+
+export function useResetOwnerPassword(tenantId: string) {
+  return useMutation({
+    mutationFn: (body: { userId: string; newPassword: string }) =>
+      platformApi.patch<{ message: string; username: string }>(
+        `/tenants/${tenantId}/owner-password`,
+        body,
+      ),
+  });
+}

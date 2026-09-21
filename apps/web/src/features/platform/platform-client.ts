@@ -74,9 +74,9 @@ export const platformApi = {
     }
   },
 
-  async patch<T>(url: string): Promise<T> {
+  async patch<T>(url: string, body?: unknown): Promise<T> {
     try {
-      return (await client.patch<T>(url)).data;
+      return (await client.patch<T>(url, body)).data;
     } catch (error) {
       throw toError(error);
     }

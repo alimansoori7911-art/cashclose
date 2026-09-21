@@ -11,6 +11,7 @@ import {
   type AdminUser,
 } from '../hooks/useAdminData';
 import { ConfirmDeactivate } from './ConfirmDeactivate';
+import { ResetPasswordModal } from './ResetPasswordModal';
 import { buildUserColumns } from './user-columns';
 import { UserEditModal } from './UserEditModal';
 import { UserFormModal } from './UserFormModal';
@@ -25,6 +26,7 @@ export function UsersTab() {
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState<AdminUser | null>(null);
   const [removing, setRemoving] = useState<AdminUser | null>(null);
+  const [resetting, setResetting] = useState<AdminUser | null>(null);
   const [removeError, setRemoveError] = useState<string | null>(null);
 
   async function handleDeactivate() {
@@ -47,6 +49,7 @@ export function UsersTab() {
     actorId: actor?.id,
     actorRole: actor?.role,
     onEdit: setEditing,
+    onResetPassword: setResetting,
     onDeactivate: (user) => {
       setRemoveError(null);
       setRemoving(user);
@@ -83,6 +86,13 @@ export function UsersTab() {
           user={editing}
           branches={branches.data?.items ?? []}
           onClose={() => setEditing(null)}
+        />
+      )}
+
+      {resetting && (
+        <ResetPasswordModal
+          user={resetting}
+          onClose={() => setResetting(null)}
         />
       )}
 
